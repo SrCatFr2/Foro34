@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfil - Foro34</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/profile.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="/">🌐 Foro34</a></h1>
+      <div class="auth-section" id="authSection"></div>
+    </header>
+
+    <main>
+      <!-- Perfil del Usuario -->
+      <div id="profileContainer" class="profile-container">
+        <!-- Banner -->
+        <div id="profileBanner" class="profile-banner"></div>
+
+        <!-- Información Principal -->
+        <div class="profile-header">
+          <div class="profile-avatar-container">
+            <img id="profileAvatar" class="profile-avatar" src="" alt="Avatar">
+            <div id="editAvatarBtn" class="edit-avatar hidden">📷 Cambiar</div>
+          </div>
+
+          <div class="profile-info">
+            <h2 id="profileUsername"></h2>
+            <p id="profileBio" class="profile-bio"></p>
+            
+            <div class="profile-details">
+              <span id="profileLocation"></span>
+              <span id="profileWebsite"></span>
+              <span id="profileJoinDate"></span>
+            </div>
+
+            <div id="editProfileBtn" class="btn-primary" style="display: none;">
+              ✏️ Editar Perfil
+            </div>
+          </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="profile-stats">
+          <div class="stat">
+            <span class="stat-number" id="statMessages">0</span>
+            <span class="stat-label">Mensajes</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number" id="statLikes">0</span>
+            <span class="stat-label">Likes Recibidos</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number" id="statFollowers">0</span>
+            <span class="stat-label">Seguidores</span>
+          </div>
+        </div>
+
+        <!-- Badges -->
+        <div id="badgesContainer" class="badges-container"></div>
+      </div>
+
+      <!-- Modal de Edición de Perfil -->
+      <div id="editProfileModal" class="modal hidden">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h2>Editar Perfil</h2>
+
+          <div class="form-group">
+            <label>Bio</label>
+            <textarea id="editBio" maxlength="500" rows="4" placeholder="Cuéntanos sobre ti..."></textarea>
+            <small id="bioCount">0/500</small>
+          </div>
+
+          <div class="form-group">
+            <label>Ubicación</label>
+            <input type="text" id="editLocation" maxlength="100" placeholder="Ciudad, País">
+          </div>
+
+          <div class="form-group">
+            <label>Sitio Web</label>
+            <input type="url" id="editWebsite" placeholder="https://...">
+          </div>
+
+          <div class="form-group">
+            <label>Color de Tema</label>
+            <div class="color-picker">
+              <button class="color-btn" data-color="blue" style="background: #667eea;"></button>
+              <button class="color-btn" data-color="purple" style="background: #764ba2;"></button>
+              <button class="color-btn" data-color="pink" style="background: #f093fb;"></button>
+              <button class="color-btn" data-color="green" style="background: #4ade80;"></button>
+              <button class="color-btn" data-color="orange" style="background: #fb923c;"></button>
+              <button class="color-btn" data-color="red" style="background: #ef4444;"></button>
+            </div>
+          </div>
+
+          <button id="saveProfileBtn" class="btn-primary btn-large">Guardar Cambios</button>
+        </div>
+      </div>
+
+      <!-- Mensajes del Usuario -->
+      <section class="user-messages">
+        <h3>Últimos Mensajes</h3>
+        <div id="userMessagesContainer"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/js/profile.js"></script>
+</body>
+</html>
