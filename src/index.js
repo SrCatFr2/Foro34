@@ -20,116 +20,93 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Servir archivos estáticos
 app.use(express.static(path.join(__dirname, '../public')));
 
-// === VARIABLE GLOBAL DE CONEXIÓN ===
-let mongoConnected = false;
+// === VARIABLE GLOBAL ===
+let isMongoConnected = false;
 
 // === FUNCIÓN PARA CONECTAR MONGODB ===
-async function connectMongo() {
-  if (mongoConnected) {
-    console.log('MongoDB ya está conectado');
+async function initializeMongo() {
+  if (isMongoConnected) {
     return;
   }
 
   if (!process.env.MONGODB_URI) {
-    console.error('ERROR: MONGODB_URI no está definido');
-    return;
+    console.error('FATAL: MONGODB_URI no está configurado');
+    throw new Error('MONGODB_URI no definido');
   }
 
   try {
+    console.log('Conectando a MongoDB...');
+    
     await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 60000,
-      connectTimeoutMS: 60000,
-      socketTimeoutMS: 60000,
-      maxPoolSize: 10,
-      minPoolSize: 2,
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 10000,
+      socketTimeoutMS: 10000,
       retryWrites: true,
-      w: 'majority',
-      family: 4
+      w: 'majority'
     });
 
-    mongoConnected = true;
-    console.log('✓ MongoDB conectado exitosamente');
+    isMongoConnected = true;
+    console.log('✓ MongoDB CONECTADO');
   } catch (error) {
-    mongoConnected = false;
-    console.error('✗ Error conectando MongoDB:', error.message);
+    isMongoConnected = false;
+    console.error('✗ MongoDB FALLÓ:', error.message);
     throw error;
   }
 }
 
-// === CONECTAR AL INICIAR ===
-connectMongo().catch(err => {
-  console.error('Fallo inicial de conexión MongoDB:', err.message);
-});
-
-// === MIDDLEWARE PARA RECONECTAR SI ES NECESARIO ===
+// === MIDDLEWARE: VERIFICAR CONEXIÓN EN CADA REQUEST ===
 app.use(async (req, res, next) => {
-  if (!mongoConnected) {
-    console.log('Reconectando a MongoDB...');
-    try {
-      await connectMongo();
-    } catch (error) {
-      console.error('Error en reconexión:', error.message);
-      return res.status(503).json({ 
-        error: 'Servidor no disponible - Error de base de datos',
-        message: error.message 
-      });
+  try {
+    if (!isMongoConnected) {
+      console.log('Intento de reconexión a MongoDB...');
+      await initializeMongo();
     }
+    next();
+  } catch (error) {
+    console.error('Error de conexión:', error.message);
+    return res.status(503).json({
+      error: 'Servidor no disponible - Conexión MongoDB fallida'
+    });
   }
-  next();
 });
 
-// === IMPORTAR RUTAS ===
+// === RUTAS API ===
 import messagesRouter from './routes/messages.js';
 import authRouter from './routes/auth.js';
 import uploadRouter from './routes/upload.js';
 
-// === RUTAS API ===
 app.use('/api/messages', messagesRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/upload', uploadRouter);
 
-// === RUTA DE HEALTH CHECK ===
-app.get('/api/health', async (req, res) => {
-  try {
-    if (!mongoConnected) {
-      await connectMongo();
-    }
-    
-    res.json({ 
-      status: 'ok',
-      mongodb: mongoConnected ? 'connected' : 'connecting',
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(503).json({ 
-      status: 'error',
-      mongodb: 'disconnected',
-      error: error.message
-    });
-  }
-});
-
-// === RUTA DE TEST ===
-app.get('/api/test', (req, res) => {
-  res.json({ 
-    message: 'API funcionando correctamente',
-    mongodb: mongoConnected ? 'connected' : 'not connected'
-  });
-});
-
-// === SPA FALLBACK ===
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
-});
-
-// === ERROR HANDLER ===
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({ 
-    error: err.message || 'Error interno del servidor',
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    mongodb: isMongoConnected ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString()
   });
 });
 
-// === EXPORTAR PARA VERCEL ===
+// Test
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API funcionando', mongodb: isMongoConnected });
+});
+
+// SPA Fallback
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// Error Handler
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({ error: err.message });
+});
+
+// === INICIALIZAR AL STARTUP ===
+initializeMongo().catch(err => {
+  console.error('Startup error:', err.message);
+});
+
 export default app;
