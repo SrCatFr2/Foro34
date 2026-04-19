@@ -3,6 +3,8 @@ const API_BASE = '/api';
 let token = localStorage.getItem('token');
 let currentUser = null;
 let selectedFiles = { images: [], videos: [] };
+let currentFilter = 'recent';
+let allMessages = [];
 
 // === ELEMENTOS DEL DOM ===
 const authModal = document.getElementById('authModal');
@@ -25,6 +27,16 @@ closeBtn?.addEventListener('click', () => closeAuthModal());
 sendBtn?.addEventListener('click', sendMessage);
 imageInput?.addEventListener('change', (e) => handleFileSelect(e, 'image'));
 videoInput?.addEventListener('change', (e) => handleFileSelect(e, 'video'));
+
+// Filtros
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    currentFilter = e.currentTarget.dataset.filter;
+    displayMessages();
+  });
+});
 
 // === FUNCIONES PRINCIPALES ===
 
@@ -102,7 +114,7 @@ function updateAuthUI() {
 
   if (token && currentUser) {
     authSection.innerHTML = `
-      <span style="color: var(--text); font-weight: 600;">👤 ${currentUser.username || currentUser.email}</span>
+      <a href="/profile.html" class="btn-secondary">👤 Mi Perfil</a>
       <button id="logoutBtn" class="btn-secondary">Cerrar Sesión</button>
     `;
     document.getElementById('logoutBtn').addEventListener('click', logout);
@@ -248,20 +260,42 @@ async function loadMessages() {
 
     if (!response.ok) throw new Error('Error al cargar mensajes');
 
-    const messages = await response.json();
-    messagesContainer.innerHTML = '';
-
-    if (messages.length === 0) {
-      messagesContainer.innerHTML = '<p style="text-align: center; color: var(--text-light);">Aún no hay mensajes. ¡Sé el primero en escribir!</p>';
-    } else {
-      messages.forEach(msg => renderMessage(msg));
-    }
+    allMessages = await response.json();
+    displayMessages();
   } catch (error) {
     console.error('Error:', error);
     messagesContainer.innerHTML = '<p style="color: var(--danger);">Error al cargar los mensajes</p>';
   } finally {
     loadingDiv.classList.add('hidden');
   }
+}
+
+function displayMessages() {
+  messagesContainer.innerHTML = '';
+
+  let messagesToDisplay = [];
+
+  switch (currentFilter) {
+    case 'trending':
+      messagesToDisplay = [...allMessages].sort((a, b) => b.likes - a.likes);
+      break;
+    case 'myMessages':
+      if (token && currentUser) {
+        messagesToDisplay = allMessages.filter(msg => msg.author.userId === currentUser.id);
+      } else {
+        messagesToDisplay = [];
+      }
+      break;
+    default:
+      messagesToDisplay = allMessages;
+  }
+
+  if (messagesToDisplay.length === 0) {
+    messagesContainer.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 40px;">Aún no hay mensajes. ¡Sé el primero en escribir!</p>';
+    return;
+  }
+
+  messagesToDisplay.forEach(msg => renderMessage(msg));
 }
 
 function renderMessage(message) {
@@ -283,9 +317,14 @@ function renderMessage(message) {
     `;
   }
 
+  const authorLink = message.author.userId 
+    ? `<span class="message-author" style="cursor: pointer;" onclick="goToProfile('${message.author.userId}')">${escapeHtml(message.author.name)}</span>`
+    : `<span class="message-author">${escapeHtml(message.author.name)}</span>`;
+
   div.innerHTML = `
     <div class="message-header">
-<span class="message-author" style="cursor: pointer;" onclick="goToProfile('${message.author.userId}')">${escapeHtml(message.author.name)}</span>      <span class="message-time">${date}${message.edited ? ' (editado)' : ''}</span>
+      ${authorLink}
+      <span class="message-time">${date}${message.edited ? ' (editado)' : ''}</span>
     </div>
     <div class="message-content">${escapeHtml(message.content)}</div>
     ${renderMedia(message)}
@@ -353,9 +392,13 @@ async function loadReplies(messageId) {
       replyDiv.className = 'reply';
 
       const date = new Date(reply.createdAt).toLocaleString('es-ES');
+      const authorLink = reply.author.userId 
+        ? `<span class="message-author" style="cursor: pointer;" onclick="goToProfile('${reply.author.userId}')">${escapeHtml(reply.author.name)}</span>`
+        : `<span class="message-author">${escapeHtml(reply.author.name)}</span>`;
+
       replyDiv.innerHTML = `
         <div class="message-header">
-          <span class="message-author">${escapeHtml(reply.author.name)}</span>
+          ${authorLink}
           <span class="message-time">${date}</span>
         </div>
         <div class="message-content">${escapeHtml(reply.content)}</div>
@@ -479,7 +522,12 @@ async function likeMessage(messageId) {
 
     if (!response.ok) throw new Error('Error');
 
-    loadMessages();
+    // Actualizar el like localmente
+    const message = allMessages.find(m => m._id === messageId);
+    if (message) {
+      message.likes++;
+      displayMessages();
+    }
   } catch (error) {
     console.error('Error:', error);
   }
@@ -489,7 +537,7 @@ function goToProfile(userId) {
   if (userId) {
     window.location.href = `/profile.html?id=${userId}`;
   }
-} 
+}
 
 // === INICIALIZACIÓN ===
 if (token) {
