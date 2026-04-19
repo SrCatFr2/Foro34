@@ -4,39 +4,35 @@ import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-// === OBTENER TODOS LOS MENSAJES ===
+// GET - Obtener mensajes
 router.get('/', async (req, res) => {
   try {
-    console.log('GET /api/messages - Buscando mensajes...');
+    console.log('GET /messages - Buscando...');
     
     const messages = await Message.find({ parentId: null })
       .populate('replies')
       .sort({ createdAt: -1 })
       .limit(100)
-      .maxTimeMS(30000);  // 30 segundos de timeout
+      .lean()  // Más rápido para lectura
+      .exec();
     
-    console.log(`✓ Encontrados ${messages.length} mensajes`);
-    res.json(messages);
+    res.json(messages || []);
   } catch (error) {
-    console.error('Error en GET /messages:', error.message);
+    console.error('GET /messages error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-// === CREAR NUEVO MENSAJE ===
+// POST - Crear mensaje
 router.post('/', async (req, res) => {
   try {
     const { author, content, images, videos, parentId } = req.body;
 
     if (!author || !content) {
-      return res.status(400).json({ error: 'Autor y contenido requeridos' });
+      return res.status(400).json({ error: 'Campos requeridos' });
     }
 
-    if (content.trim().length === 0) {
-      return res.status(400).json({ error: 'El mensaje no puede estar vacío' });
-    }
-
-    const nuevoMensaje = new Message({
+    const newMessage = new Message({
       author: {
         name: author.substring(0, 50),
         userId: req.userId || null
@@ -47,22 +43,37 @@ router.post('/', async (req, res) => {
       parentId: parentId || null
     });
 
-    await nuevoMensaje.save();
+    await newMessage.save();
 
     if (parentId) {
-      await Message.findByIdAndUpdate(parentId, {
-        $push: { replies: nuevoMensaje._id }
-      }, { maxTimeMS: 30000 });
+      await Message.findByIdAndUpdate(
+        parentId,
+        { $push: { replies: newMessage._id } },
+        { new: true }
+      );
     }
 
-    res.status(201).json(nuevoMensaje);
+    res.status(201).json(newMessage);
   } catch (error) {
-    console.error('Error en POST /messages:', error.message);
+    console.error('POST /messages error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-// === RESTO DE RUTAS ===
-// (mantén el resto del código igual)
+// GET - Obtener respuestas
+router.get('/:id/replies', async (req, res) => {
+  try {
+    const replies = await Message.find({ parentId: req.params.id })
+      .sort({ createdAt: 1 })
+      .lean()
+      .exec();
 
+    res.json(replies || []);
+  } catch (error) {
+    console.error('GET replies error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Resto de rutas igual...
 export default router;
