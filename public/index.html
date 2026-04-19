@@ -7,91 +7,104 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
-  <div class="app-wrapper">
+<body class="dark-mode">
+  <div class="app-container">
     <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="sidebar-header">
+      <div class="sidebar-top">
         <div class="logo">
-          <div class="logo-icon">F34</div>
+          <div class="logo-icon">
+            <i class="fas fa-comments"></i>
+          </div>
           <span class="logo-text">Foro34</span>
         </div>
+
+        <nav class="nav-menu">
+          <button class="nav-item active" data-filter="recent">
+            <i class="fas fa-home"></i>
+            <span>Para ti</span>
+          </button>
+          <button class="nav-item" data-filter="trending">
+            <i class="fas fa-fire"></i>
+            <span>Trending</span>
+          </button>
+          <button class="nav-item" data-filter="myMessages">
+            <i class="fas fa-comment-dots"></i>
+            <span>Mis Posts</span>
+          </button>
+        </nav>
       </div>
 
-      <nav class="sidebar-nav">
-        <button class="nav-item active" data-filter="recent">
-          <i class="fas fa-clock"></i>
-          <span>Recientes</span>
-        </button>
-        <button class="nav-item" data-filter="trending">
-          <i class="fas fa-fire"></i>
-          <span>Trending</span>
-        </button>
-        <button class="nav-item" data-filter="myMessages">
-          <i class="fas fa-comment-dots"></i>
-          <span>Mis Mensajes</span>
-        </button>
-      </nav>
-
-      <div class="sidebar-footer" id="authSection"></div>
+      <div class="sidebar-bottom" id="authSection"></div>
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content">
-      <header class="top-bar">
-        <h1>Community Forum</h1>
-        <div class="search-box">
-          <i class="fas fa-search"></i>
-          <input type="text" placeholder="Buscar mensajes..." id="searchInput">
+    <main class="main-container">
+      <!-- Top Bar -->
+      <header class="header-bar">
+        <div class="search-container">
+          <i class="fas fa-search search-icon"></i>
+          <input type="text" placeholder="Buscar..." id="searchInput" class="search-input">
+        </div>
+        <div class="header-actions">
+          <button class="notification-btn">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge">0</span>
+          </button>
         </div>
       </header>
 
-      <div class="content-wrapper">
-        <!-- Create Message Section -->
-        <section class="create-message-card">
-          <div class="create-header">
-            <h2>Crear Mensaje</h2>
+      <!-- Content Area -->
+      <div class="content-area">
+        <!-- Create Post Section -->
+        <section class="create-post-card">
+          <div class="post-header">
+            <div class="user-avatar-small" id="myAvatarSmall">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="post-input-wrapper">
+              <textarea id="messageContent" placeholder="¿Qué está pasando?!" class="post-textarea"></textarea>
+              <input type="text" id="authorName" placeholder="Tu nombre" class="post-author" hidden>
+            </div>
           </div>
-          <input type="text" id="authorName" placeholder="Tu nombre (se usa automáticamente si estás loggeado)" maxlength="50" class="input-field">
-          <textarea id="messageContent" placeholder="Escribe tu mensaje aquí..." rows="4" maxlength="5000" class="textarea-field"></textarea>
-          
-          <div class="media-controls">
-            <label class="media-btn">
-              <i class="fas fa-image"></i> Imágenes
+
+          <div class="post-media-section">
+            <label class="media-btn-icon">
+              <i class="fas fa-image"></i>
               <input type="file" id="imageInput" accept="image/*" multiple hidden>
             </label>
-            <label class="media-btn">
-              <i class="fas fa-video"></i> Video
+            <label class="media-btn-icon">
+              <i class="fas fa-video"></i>
               <input type="file" id="videoInput" accept="video/*" hidden>
             </label>
           </div>
 
-          <div id="mediaPreview" class="media-preview"></div>
+          <div id="mediaPreview" class="media-preview-grid"></div>
 
-          <button id="sendBtn" class="btn-primary btn-large">
-            <i class="fas fa-paper-plane"></i> Publicar Mensaje
+          <button id="sendBtn" class="btn-post">
+            <i class="fas fa-paper-plane"></i> Publicar
           </button>
         </section>
 
-        <!-- Messages Container -->
-        <div id="loading" class="loading hidden">
-          <div class="spinner"></div>
-          <p>Cargando mensajes...</p>
+        <!-- Messages Feed -->
+        <div id="loading" class="loading-skeleton">
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
         </div>
 
-        <section id="messagesContainer" class="messages-list"></section>
+        <div id="messagesContainer" class="feed-container"></div>
       </div>
     </main>
   </div>
 
   <!-- Auth Modal -->
-  <div id="authModal" class="modal hidden">
-    <div class="modal-overlay" onclick="closeAuthModal()"></div>
-    <div class="modal-content">
+  <div id="authModal" class="modal-overlay hidden">
+    <div class="modal-window">
       <button class="modal-close" onclick="closeAuthModal()">
         <i class="fas fa-times"></i>
       </button>
-      <div id="authForm"></div>
+      <div id="authForm" class="auth-form"></div>
     </div>
   </div>
 
