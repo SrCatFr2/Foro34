@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Foro34 - Foro de Mensajes</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-content">
+        <h1>🌐 Foro34</h1>
+        <div class="auth-section" id="authSection">
+          <button id="loginBtn" class="btn-primary">Iniciar Sesión</button>
+          <button id="registerBtn" class="btn-secondary">Registrarse</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Modal de Autenticación -->
+    <div id="authModal" class="modal hidden">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="authForm"></div>
+      </div>
+    </div>
+
+    <main>
+      <!-- Crear mensaje -->
+      <section id="createMessage" class="create-section">
+        <h2>Crear Mensaje</h2>
+        <input type="text" id="authorName" placeholder="Tu nombre (opcional)" maxlength="50">
+        <textarea id="messageContent" placeholder="Escribe tu mensaje..." rows="4" maxlength="5000"></textarea>
+        
+        <div class="media-section">
+          <label class="file-label">
+            📷 Agregar imágenes
+            <input type="file" id="imageInput" accept="image/*" multiple>
+          </label>
+          <label class="file-label">
+            🎥 Agregar video
+            <input type="file" id="videoInput" accept="video/*">
+          </label>
+          <div id="mediaPreview" class="media-preview"></div>
+        </div>
+
+        <button id="sendBtn" class="btn-primary btn-large">Publicar Mensaje</button>
+      </section>
+
+      <!-- Loading indicator -->
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>Cargando mensajes...</p>
+      </div>
+
+      <!-- Lista de mensajes -->
+      <section id="messagesContainer" class="messages-container">
+        <!-- Los mensajes se cargarán aquí -->
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 Foro34 - Todos los derechos reservados</p>
+    </footer>
+  </div>
+
+  <script src="/js/client.js"></script>
+</body>
+</html>
