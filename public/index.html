@@ -4,51 +4,130 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Foro34</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+  />
   <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
+  <div class="app-bg"></div>
+
   <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">34</div>
-        <div class="brand-copy">
-          <strong>Foro34</strong>
-          <span>community forum</span>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <div class="brand-mark">
+            <span>34</span>
+          </div>
+
+          <div class="brand-copy">
+            <strong>Foro34</strong>
+            <small>dark triad community</small>
+          </div>
+
+          <button class="icon-btn sidebar-close mobile-only" id="sidebarCloseBtn" aria-label="Cerrar menú">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
+
+        <div class="sidebar-user glass-panel" id="sidebarUser"></div>
+
+        <nav class="side-nav">
+          <button class="side-link active" data-filter="recent">
+            <i class="fa-solid fa-house"></i>
+            <span>Inicio</span>
+          </button>
+
+          <button class="side-link" data-filter="trending">
+            <i class="fa-solid fa-fire"></i>
+            <span>Tendencias</span>
+          </button>
+
+          <button class="side-link" data-filter="myMessages">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Mis mensajes</span>
+          </button>
+        </nav>
       </div>
 
-      <nav class="sidebar-nav">
-        <button class="nav-btn active" data-filter="recent">Inicio</button>
-        <button class="nav-btn" data-filter="trending">Popular</button>
-        <button class="nav-btn" data-filter="myMessages">Mis mensajes</button>
-      </nav>
+      <div class="sidebar-bottom">
+        <div class="side-card glass-panel">
+          <div class="side-card-head">
+            <i class="fa-solid fa-chart-simple"></i>
+            <span>Resumen</span>
+          </div>
 
-      <div class="sidebar-box" id="authSection"></div>
-    </aside>
+          <div class="mini-stats">
+            <div class="mini-stat">
+              <strong id="statThreads">0</strong>
+              <span>Hilos</span>
+            </div>
 
-    <main class="main">
-      <header class="topbar glass">
-        <div class="topbar-left">
-          <h1>Feed</h1>
-          <p>Comunidad abierta, perfiles reales opcionales</p>
-        </div>
+            <div class="mini-stat">
+              <strong id="statReplies">0</strong>
+              <span>Respuestas</span>
+            </div>
 
-        <div class="topbar-right">
-          <div class="search">
-            <input type="text" id="searchInput" placeholder="Buscar mensajes..." />
+            <div class="mini-stat">
+              <strong id="statLikes">0</strong>
+              <span>Likes</span>
+            </div>
           </div>
         </div>
+
+        <div class="side-card glass-panel">
+          <div class="side-card-head">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>Estilo</span>
+          </div>
+
+          <p class="muted">
+            Diseño oscuro, minimalista, agresivo y cómodo. Pensado para leer, responder y publicar sin que todo se vea amontonado.
+          </p>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-shell">
+      <header class="topbar glass-panel">
+        <div class="topbar-left">
+          <button class="icon-btn mobile-only" id="sidebarOpenBtn" aria-label="Abrir menú">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+
+          <div>
+            <h1>Foro34</h1>
+            <p>Feed principal</p>
+          </div>
+        </div>
+
+        <div class="topbar-center">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Buscar mensajes o usuarios..." />
+          </div>
+        </div>
+
+        <div class="topbar-right" id="topbarAuth"></div>
       </header>
 
-      <section class="layout-grid">
-        <div class="feed-column">
-          <section class="composer glass">
-            <div class="composer-head">
+      <main class="content-grid">
+        <section class="feed-column">
+          <section class="composer glass-panel">
+            <div class="composer-header">
               <div class="composer-avatar" id="composerAvatar"></div>
 
-              <div class="composer-user">
-                <strong id="composerUserName">Invitado</strong>
-                <span id="composerUserMeta">Publicación rápida</span>
+              <div class="composer-meta">
+                <strong id="composerName">Invitado</strong>
+                <span id="composerSubtitle">Publicación rápida</span>
               </div>
             </div>
 
@@ -56,73 +135,101 @@
               <input
                 type="text"
                 id="authorName"
-                class="guest-name-input"
+                class="author-input"
                 placeholder="Tu nombre, opcional"
                 maxlength="50"
               />
 
               <textarea
                 id="messageContent"
-                placeholder="Comparte algo con la comunidad"
                 rows="5"
                 maxlength="5000"
+                placeholder="Escribe algo que valga la pena leer..."
               ></textarea>
 
               <div id="mediaPreview" class="media-preview"></div>
             </div>
 
-            <div class="composer-actions">
+            <div class="composer-footer">
               <div class="composer-tools">
                 <label class="tool-btn">
                   <input type="file" id="imageInput" accept="image/*" multiple hidden />
-                  Imagen
+                  <i class="fa-regular fa-image"></i>
+                  <span>Imagen</span>
                 </label>
 
                 <label class="tool-btn">
                   <input type="file" id="videoInput" accept="video/*" hidden />
-                  Video
+                  <i class="fa-solid fa-video"></i>
+                  <span>Video</span>
                 </label>
               </div>
 
-              <button id="sendBtn" class="primary-btn">Publicar</button>
+              <button class="primary-btn" id="sendBtn">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>Publicar</span>
+              </button>
             </div>
           </section>
 
-          <div id="loading" class="loading-state">Cargando mensajes...</div>
-          <section id="messagesContainer" class="feed-list"></section>
-        </div>
+          <div id="loading" class="loading-box">Cargando mensajes...</div>
 
-        <aside class="rightbar">
-          <div class="panel glass">
-            <h3>Foro34</h3>
+          <section class="feed-list" id="messagesContainer"></section>
+        </section>
+
+        <aside class="right-rail">
+          <div class="rail-card glass-panel">
+            <div class="rail-title">
+              <i class="fa-solid fa-skull"></i>
+              <span>Dark Triad</span>
+            </div>
             <p>
-              Foro público con login opcional, respuestas, multimedia y perfiles
-              personalizados.
+              Negro profundo, rojo intenso, blanco limpio, contraste alto, bloques con respiración y bordes premium.
             </p>
           </div>
 
-          <div class="panel glass">
-            <h3>Consejos</h3>
-            <ul class="tips">
-              <li>Usa login para publicar con tu perfil y foto.</li>
-              <li>Los invitados pueden publicar sin cuenta.</li>
-              <li>Haz clic en un nombre para ver su perfil.</li>
-            </ul>
+          <div class="rail-card glass-panel">
+            <div class="rail-title">
+              <i class="fa-solid fa-bolt"></i>
+              <span>Acceso rápido</span>
+            </div>
+
+            <div class="quick-list">
+              <button class="quick-btn" id="quickRecentBtn">Ver recientes</button>
+              <button class="quick-btn" id="quickTrendingBtn">Ver tendencias</button>
+              <button class="quick-btn" id="quickTopBtn">Ir arriba</button>
+            </div>
+          </div>
+
+          <div class="rail-card glass-panel">
+            <div class="rail-title">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>Consejo</span>
+            </div>
+            <p>
+              Si inicias sesión, tus publicaciones usan automáticamente tu nombre y tu foto de perfil, si tu backend ya guarda avatar.
+            </p>
           </div>
         </aside>
-      </section>
-    </main>
+      </main>
+    </div>
   </div>
 
-  <div id="authModal" class="modal hidden">
+  <div class="mobile-overlay hidden" id="mobileOverlay"></div>
+
+  <div class="modal hidden" id="authModal">
     <div class="modal-backdrop"></div>
-    <div class="modal-card glass">
-      <button class="modal-close" id="closeAuthModalBtn">×</button>
+
+    <div class="modal-card glass-panel">
+      <button class="modal-close" id="closeAuthModalBtn" aria-label="Cerrar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
       <div id="authForm"></div>
     </div>
   </div>
 
-  <div id="toastContainer" class="toast-container"></div>
+  <div class="toast-container" id="toastContainer"></div>
 
   <script src="/js/client.js"></script>
 </body>
