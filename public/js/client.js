@@ -2,17 +2,21 @@ const API_BASE = '/api';
 
 let token = localStorage.getItem('token');
 let currentUser = null;
-let selectedFiles = { images: [], videos: [] };
 let allMessages = [];
 let currentFilter = 'recent';
+let selectedFiles = { images: [], videos: [] };
 
-const authModal = document.getElementById('authModal');
-const authForm = document.getElementById('authForm');
-const closeAuthModalBtn = document.getElementById('closeAuthModalBtn');
-const authSection = document.getElementById('authSection');
+const sidebar = document.getElementById('sidebar');
+const sidebarOpenBtn = document.getElementById('sidebarOpenBtn');
+const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+const mobileOverlay = document.getElementById('mobileOverlay');
+
+const sidebarUser = document.getElementById('sidebarUser');
+const topbarAuth = document.getElementById('topbarAuth');
+
 const composerAvatar = document.getElementById('composerAvatar');
-const composerUserName = document.getElementById('composerUserName');
-const composerUserMeta = document.getElementById('composerUserMeta');
+const composerName = document.getElementById('composerName');
+const composerSubtitle = document.getElementById('composerSubtitle');
 const authorNameInput = document.getElementById('authorName');
 const messageContentInput = document.getElementById('messageContent');
 const imageInput = document.getElementById('imageInput');
@@ -22,31 +26,29 @@ const sendBtn = document.getElementById('sendBtn');
 const loading = document.getElementById('loading');
 const messagesContainer = document.getElementById('messagesContainer');
 const searchInput = document.getElementById('searchInput');
+
+const statThreads = document.getElementById('statThreads');
+const statReplies = document.getElementById('statReplies');
+const statLikes = document.getElementById('statLikes');
+
+const authModal = document.getElementById('authModal');
+const authForm = document.getElementById('authForm');
+const closeAuthModalBtn = document.getElementById('closeAuthModalBtn');
+
 const toastContainer = document.getElementById('toastContainer');
 
-document.querySelectorAll('.nav-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.nav-btn').forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentFilter = btn.dataset.filter;
-    renderFeed();
-  });
-});
-
-closeAuthModalBtn.addEventListener('click', closeAuthModal);
-imageInput.addEventListener('change', (e) => handleFileSelect(e, 'image'));
-videoInput.addEventListener('change', (e) => handleFileSelect(e, 'video'));
-sendBtn.addEventListener('click', sendMessage);
-searchInput.addEventListener('input', renderFeed);
+const quickRecentBtn = document.getElementById('quickRecentBtn');
+const quickTrendingBtn = document.getElementById('quickTrendingBtn');
+const quickTopBtn = document.getElementById('quickTopBtn');
 
 function showToast(message, type = 'success') {
-  const item = document.createElement('div');
-  item.className = `toast ${type}`;
-  item.textContent = message;
-  toastContainer.appendChild(item);
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  toastContainer.appendChild(toast);
 
   setTimeout(() => {
-    item.remove();
+    toast.remove();
   }, 2600);
 }
 
@@ -56,69 +58,107 @@ function escapeHtml(text = '') {
   return div.innerHTML;
 }
 
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleString('es-ES');
-}
-
-function timeAgo(dateString) {
-  const date = new Date(dateString);
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-
-  if (seconds < 60) return 'ahora';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `hace ${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `hace ${hours} h`;
-  const days = Math.floor(hours / 24);
-  return `hace ${days} d`;
-}
-
-function canvasAvatar(name = 'U', size = 120, colorA = '#4f7cff', colorB = '#7a5cff') {
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-
-  const ctx = canvas.getContext('2d');
-  const gradient = ctx.createLinearGradient(0, 0, size, size);
-  gradient.addColorStop(0, colorA);
-  gradient.addColorStop(1, colorB);
-
-  ctx.fillStyle = gradient;
-  ctx.beginPath();
-  ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-  ctx.fill();
-
-  const initial = (name || 'U').trim().charAt(0).toUpperCase();
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `700 ${size * 0.42}px Inter, Arial`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(initial, size / 2, size / 2 + 2);
-
-  return canvas.toDataURL('image/png');
-}
-
 function getUserId(user) {
   return user?.id || user?._id || null;
 }
 
-function getAvatarUrl(name, avatar) {
-  return avatar || canvasAvatar(name || 'U');
+function avatarDataUrl(name = 'U', bg = '#ff2e43', fg = '#ffffff') {
+  const initial = (name.trim()[0] || 'U').toUpperCase();
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+      <defs>
+        <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stop-color="${bg}" />
+          <stop offset="100%" stop-color="#6f0d1d" />
+        </linearGradient>
+      </defs>
+      <circle cx="64" cy="64" r="64" fill="url(#g)" />
+      <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
+            font-family="Inter, Arial, sans-serif" font-size="52" font-weight="800" fill="${fg}">
+        ${initial}
+      </text>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function getAvatar(name, avatar) {
+  return avatar || avatarDataUrl(name);
 }
 
 function renderAvatar(container, name, avatar) {
-  container.innerHTML = `<img src="${getAvatarUrl(name, avatar)}" alt="${escapeHtml(name)}">`;
+  container.innerHTML = `<img src="${getAvatar(name, avatar)}" alt="${escapeHtml(name)}">`;
+}
+
+function timeAgo(dateString) {
+  const date = new Date(dateString);
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+
+  if (diff < 60) return 'ahora';
+  if (diff < 3600) return `hace ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `hace ${Math.floor(diff / 3600)} h`;
+  return `hace ${Math.floor(diff / 86400)} d`;
+}
+
+function formatDate(dateString) {
+  return new Date(dateString).toLocaleString('es-ES');
+}
+
+function openSidebar() {
+  sidebar.classList.add('open');
+  mobileOverlay.classList.remove('hidden');
+}
+
+function closeSidebar() {
+  sidebar.classList.remove('open');
+  mobileOverlay.classList.add('hidden');
+}
+
+sidebarOpenBtn?.addEventListener('click', openSidebar);
+sidebarCloseBtn?.addEventListener('click', closeSidebar);
+mobileOverlay?.addEventListener('click', closeSidebar);
+
+quickRecentBtn?.addEventListener('click', () => {
+  setFilter('recent');
+});
+
+quickTrendingBtn?.addEventListener('click', () => {
+  setFilter('trending');
+});
+
+quickTopBtn?.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+document.querySelectorAll('.side-link').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    setFilter(btn.dataset.filter);
+    closeSidebar();
+  });
+});
+
+function setFilter(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.side-link').forEach((b) => {
+    b.classList.toggle('active', b.dataset.filter === filter);
+  });
+  renderFeed();
 }
 
 function openAuthModal(type = 'login') {
   if (type === 'login') {
     authForm.innerHTML = `
       <h2>Iniciar sesión</h2>
+      <p>Accede para usar perfil, foto y personalización.</p>
+
       <input type="email" id="loginEmail" placeholder="Correo electrónico" />
       <input type="password" id="loginPassword" placeholder="Contraseña" />
-      <button class="primary-btn" id="submitLoginBtn">Entrar</button>
+
+      <button class="primary-btn" id="submitLoginBtn">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        <span>Entrar</span>
+      </button>
+
       <div class="auth-switch">
         ¿No tienes cuenta?
         <a href="#" id="goRegisterLink">Crear una</a>
@@ -127,10 +167,17 @@ function openAuthModal(type = 'login') {
   } else {
     authForm.innerHTML = `
       <h2>Crear cuenta</h2>
+      <p>Activa perfil, nombre fijo y foto personalizada.</p>
+
       <input type="text" id="registerUsername" placeholder="Nombre de usuario" />
       <input type="email" id="registerEmail" placeholder="Correo electrónico" />
       <input type="password" id="registerPassword" placeholder="Contraseña" />
-      <button class="primary-btn" id="submitRegisterBtn">Registrarme</button>
+
+      <button class="primary-btn" id="submitRegisterBtn">
+        <i class="fa-solid fa-user-plus"></i>
+        <span>Registrarme</span>
+      </button>
+
       <div class="auth-switch">
         ¿Ya tienes cuenta?
         <a href="#" id="goLoginLink">Iniciar sesión</a>
@@ -140,28 +187,25 @@ function openAuthModal(type = 'login') {
 
   authModal.classList.remove('hidden');
 
-  const goRegisterLink = document.getElementById('goRegisterLink');
-  const goLoginLink = document.getElementById('goLoginLink');
-  const submitLoginBtn = document.getElementById('submitLoginBtn');
-  const submitRegisterBtn = document.getElementById('submitRegisterBtn');
-
-  goRegisterLink?.addEventListener('click', (e) => {
+  document.getElementById('goRegisterLink')?.addEventListener('click', (e) => {
     e.preventDefault();
     openAuthModal('register');
   });
 
-  goLoginLink?.addEventListener('click', (e) => {
+  document.getElementById('goLoginLink')?.addEventListener('click', (e) => {
     e.preventDefault();
     openAuthModal('login');
   });
 
-  submitLoginBtn?.addEventListener('click', login);
-  submitRegisterBtn?.addEventListener('click', register);
+  document.getElementById('submitLoginBtn')?.addEventListener('click', login);
+  document.getElementById('submitRegisterBtn')?.addEventListener('click', register);
 }
 
 function closeAuthModal() {
   authModal.classList.add('hidden');
 }
+
+closeAuthModalBtn?.addEventListener('click', closeAuthModal);
 
 async function register() {
   try {
@@ -189,9 +233,9 @@ async function register() {
     token = data.token;
     localStorage.setItem('token', token);
     await loadCurrentUser();
-    updateAuthUI();
+    updateUIFromSession();
     closeAuthModal();
-    showToast('Cuenta creada correctamente');
+    showToast('Cuenta creada');
   } catch (error) {
     showToast(error.message, 'error');
   }
@@ -222,7 +266,7 @@ async function login() {
     token = data.token;
     localStorage.setItem('token', token);
     await loadCurrentUser();
-    updateAuthUI();
+    updateUIFromSession();
     closeAuthModal();
     showToast('Sesión iniciada');
   } catch (error) {
@@ -234,63 +278,9 @@ function logout() {
   token = null;
   currentUser = null;
   localStorage.removeItem('token');
-  updateAuthUI();
-  loadMessages();
+  updateUIFromSession();
+  renderFeed();
   showToast('Sesión cerrada');
-}
-
-function updateAuthUI() {
-  if (currentUser) {
-    authSection.innerHTML = `
-      <div class="user-card">
-        <div class="user-card-top">
-          <div class="user-mini-avatar" id="sidebarUserAvatar"></div>
-          <div class="user-mini-meta">
-            <strong>${escapeHtml(currentUser.username)}</strong>
-            <span>${escapeHtml(currentUser.email)}</span>
-          </div>
-        </div>
-
-        <div class="user-card-actions">
-          <button class="secondary-btn" id="goMyProfileBtn">Mi perfil</button>
-          <button class="secondary-btn" id="logoutBtn">Salir</button>
-        </div>
-      </div>
-    `;
-
-    const sidebarUserAvatar = document.getElementById('sidebarUserAvatar');
-    sidebarUserAvatar.innerHTML = `<img src="${getAvatarUrl(currentUser.username, currentUser.profile?.avatar)}" alt="${escapeHtml(currentUser.username)}">`;
-
-    document.getElementById('goMyProfileBtn').addEventListener('click', () => {
-      window.location.href = '/profile.html';
-    });
-
-    document.getElementById('logoutBtn').addEventListener('click', logout);
-
-    composerUserName.textContent = currentUser.username;
-    composerUserMeta.textContent = 'Publicando con tu perfil';
-    authorNameInput.value = currentUser.username;
-    authorNameInput.disabled = true;
-    authorNameInput.classList.add('hidden');
-    renderAvatar(composerAvatar, currentUser.username, currentUser.profile?.avatar);
-  } else {
-    authSection.innerHTML = `
-      <div class="user-card">
-        <button class="primary-btn" id="openLoginBtn">Iniciar sesión</button>
-        <button class="secondary-btn" id="openRegisterBtn">Crear cuenta</button>
-      </div>
-    `;
-
-    document.getElementById('openLoginBtn').addEventListener('click', () => openAuthModal('login'));
-    document.getElementById('openRegisterBtn').addEventListener('click', () => openAuthModal('register'));
-
-    composerUserName.textContent = 'Invitado';
-    composerUserMeta.textContent = 'Publicación anónima opcional';
-    authorNameInput.value = '';
-    authorNameInput.disabled = false;
-    authorNameInput.classList.remove('hidden');
-    renderAvatar(composerAvatar, 'Invitado', null);
-  }
 }
 
 async function loadCurrentUser() {
@@ -308,8 +298,8 @@ async function loadCurrentUser() {
 
     if (!response.ok) {
       token = null;
-      currentUser = null;
       localStorage.removeItem('token');
+      currentUser = null;
       return;
     }
 
@@ -318,13 +308,115 @@ async function loadCurrentUser() {
     currentUser = user;
   } catch {
     token = null;
-    currentUser = null;
     localStorage.removeItem('token');
+    currentUser = null;
   }
 }
 
+function updateUIFromSession() {
+  if (currentUser) {
+    sidebarUser.innerHTML = `
+      <div class="user-box">
+        <div class="user-box-top">
+          <div class="user-box-avatar" id="sidebarUserAvatar"></div>
+
+          <div class="user-box-meta">
+            <strong>${escapeHtml(currentUser.username)}</strong>
+            <span>${escapeHtml(currentUser.email || '')}</span>
+          </div>
+        </div>
+
+        <div class="user-box-actions">
+          <button class="secondary-btn" id="goProfileBtn">
+            <i class="fa-regular fa-user"></i>
+            <span>Perfil</span>
+          </button>
+
+          <button class="secondary-btn" id="logoutBtn">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <span>Salir</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    topbarAuth.innerHTML = `
+      <button class="user-chip" id="topProfileBtn">
+        <i class="fa-regular fa-user"></i>
+        <span>${escapeHtml(currentUser.username)}</span>
+      </button>
+    `;
+
+    renderAvatar(
+      document.getElementById('sidebarUserAvatar'),
+      currentUser.username,
+      currentUser.profile?.avatar
+    );
+
+    document.getElementById('goProfileBtn')?.addEventListener('click', () => {
+      window.location.href = '/profile.html';
+    });
+
+    document.getElementById('topProfileBtn')?.addEventListener('click', () => {
+      window.location.href = '/profile.html';
+    });
+
+    document.getElementById('logoutBtn')?.addEventListener('click', logout);
+
+    composerName.textContent = currentUser.username;
+    composerSubtitle.textContent = 'Publicando con tu perfil';
+    authorNameInput.value = currentUser.username;
+    authorNameInput.disabled = true;
+    authorNameInput.classList.add('hidden');
+    renderAvatar(composerAvatar, currentUser.username, currentUser.profile?.avatar);
+  } else {
+    sidebarUser.innerHTML = `
+      <div class="user-box">
+        <button class="primary-btn" id="sidebarLoginBtn">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>Iniciar sesión</span>
+        </button>
+
+        <button class="secondary-btn" id="sidebarRegisterBtn">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Crear cuenta</span>
+        </button>
+      </div>
+    `;
+
+    topbarAuth.innerHTML = `
+      <button class="secondary-btn" id="topLoginBtn">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        <span>Entrar</span>
+      </button>
+      <button class="primary-btn" id="topRegisterBtn">
+        <i class="fa-solid fa-user-plus"></i>
+        <span>Registro</span>
+      </button>
+    `;
+
+    document.getElementById('sidebarLoginBtn')?.addEventListener('click', () => openAuthModal('login'));
+    document.getElementById('sidebarRegisterBtn')?.addEventListener('click', () => openAuthModal('register'));
+    document.getElementById('topLoginBtn')?.addEventListener('click', () => openAuthModal('login'));
+    document.getElementById('topRegisterBtn')?.addEventListener('click', () => openAuthModal('register'));
+
+    composerName.textContent = 'Invitado';
+    composerSubtitle.textContent = 'Publicación anónima opcional';
+    authorNameInput.value = '';
+    authorNameInput.disabled = false;
+    authorNameInput.classList.remove('hidden');
+    renderAvatar(composerAvatar, 'Invitado', null);
+  }
+}
+
+imageInput.addEventListener('change', (e) => handleFileSelect(e, 'image'));
+videoInput.addEventListener('change', (e) => handleFileSelect(e, 'video'));
+sendBtn.addEventListener('click', sendMessage);
+searchInput.addEventListener('input', renderFeed);
+
 function handleFileSelect(event, type) {
   const files = Array.from(event.target.files || []);
+
   if (type === 'image') selectedFiles.images = files;
   if (type === 'video') selectedFiles.videos = files;
 
@@ -334,10 +426,9 @@ function handleFileSelect(event, type) {
     const reader = new FileReader();
 
     reader.onload = (e) => {
-      const url = e.target.result;
       const isImage = file.type.startsWith('image/');
       const element = document.createElement(isImage ? 'img' : 'video');
-      element.src = url;
+      element.src = e.target.result;
       if (!isImage) element.controls = true;
       mediaPreview.appendChild(element);
     };
@@ -364,7 +455,7 @@ function uploadFile(file) {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'Error al subir archivo');
+          throw new Error(data.error || 'Error subiendo archivo');
         }
 
         resolve(data.url);
@@ -373,7 +464,7 @@ function uploadFile(file) {
       }
     };
 
-    reader.onerror = () => reject(new Error('Error leyendo archivo'));
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
     reader.readAsDataURL(file);
   });
 }
@@ -381,7 +472,9 @@ function uploadFile(file) {
 async function sendMessage() {
   try {
     const content = messageContentInput.value.trim();
-    const author = currentUser ? currentUser.username : (authorNameInput.value.trim() || 'Anónimo');
+    const author = currentUser
+      ? currentUser.username
+      : (authorNameInput.value.trim() || 'Anónimo');
 
     if (!content) {
       showToast('Escribe un mensaje', 'error');
@@ -389,7 +482,10 @@ async function sendMessage() {
     }
 
     sendBtn.disabled = true;
-    sendBtn.textContent = 'Publicando...';
+    sendBtn.innerHTML = `
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      <span>Publicando</span>
+    `;
 
     const images = [];
     const videos = [];
@@ -440,32 +536,56 @@ async function sendMessage() {
     showToast(error.message, 'error');
   } finally {
     sendBtn.disabled = false;
-    sendBtn.textContent = 'Publicar';
+    sendBtn.innerHTML = `
+      <i class="fa-solid fa-paper-plane"></i>
+      <span>Publicar</span>
+    `;
   }
 }
 
 async function loadMessages() {
   try {
     loading.classList.remove('hidden');
+
     const response = await fetch(`${API_BASE}/messages`);
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'No se pudieron cargar mensajes');
+      throw new Error(data.error || 'No se pudieron cargar los mensajes');
     }
 
     allMessages = data;
+    updateStats();
     renderFeed();
   } catch (error) {
-    messagesContainer.innerHTML = `<div class="message-card glass">Error cargando mensajes</div>`;
+    messagesContainer.innerHTML = `
+      <article class="message-card glass-panel">
+        Error cargando mensajes.
+      </article>
+    `;
   } finally {
     loading.classList.add('hidden');
   }
 }
 
+function updateStats() {
+  const threads = allMessages.length;
+  let replies = 0;
+  let likes = 0;
+
+  allMessages.forEach((msg) => {
+    replies += Array.isArray(msg.replies) ? msg.replies.length : 0;
+    likes += msg.likes || 0;
+  });
+
+  statThreads.textContent = threads;
+  statReplies.textContent = replies;
+  statLikes.textContent = likes;
+}
+
 function getFilteredMessages() {
-  const query = searchInput.value.trim().toLowerCase();
   let list = [...allMessages];
+  const query = searchInput.value.trim().toLowerCase();
 
   if (currentFilter === 'trending') {
     list.sort((a, b) => (b.likes || 0) - (a.likes || 0));
@@ -478,10 +598,9 @@ function getFilteredMessages() {
 
   if (query) {
     list = list.filter((msg) => {
-      return (
-        (msg.content || '').toLowerCase().includes(query) ||
-        (msg.author?.name || '').toLowerCase().includes(query)
-      );
+      const content = (msg.content || '').toLowerCase();
+      const author = (msg.author?.name || '').toLowerCase();
+      return content.includes(query) || author.includes(query);
     });
   }
 
@@ -493,15 +612,15 @@ function renderFeed() {
 
   if (!list.length) {
     messagesContainer.innerHTML = `
-      <div class="message-card glass">
+      <article class="message-card glass-panel">
         No hay mensajes para mostrar.
-      </div>
+      </article>
     `;
     return;
   }
 
   messagesContainer.innerHTML = '';
-  list.forEach(renderMessageCard);
+  list.forEach((message) => renderMessageCard(message));
 }
 
 function renderMessageMedia(message) {
@@ -510,7 +629,7 @@ function renderMessageMedia(message) {
   if (message.images?.length) {
     html += '<div class="message-media">';
     message.images.forEach((img) => {
-      html += `<img src="${img}" alt="media">`;
+      html += `<img src="${img}" alt="Imagen">`;
     });
     html += '</div>';
   }
@@ -527,27 +646,28 @@ function renderMessageMedia(message) {
 }
 
 function renderMessageCard(message) {
-  const card = document.createElement('article');
-  card.className = 'message-card glass';
+  const article = document.createElement('article');
+  article.className = 'message-card glass-panel';
 
   const authorName = message.author?.name || 'Anónimo';
   const authorAvatar = message.author?.avatar || null;
   const authorUserId = message.author?.userId || null;
-  const canEdit = currentUser?.id && authorUserId && String(currentUser.id) === String(authorUserId);
+  const canEdit =
+    currentUser?.id &&
+    authorUserId &&
+    String(currentUser.id) === String(authorUserId);
 
-  card.innerHTML = `
+  article.innerHTML = `
     <div class="message-header">
       <div class="message-user">
-        <div class="message-avatar" data-profile-id="${authorUserId || ''}"></div>
+        <div class="message-avatar"></div>
 
         <div class="message-user-meta">
-          <div class="message-user-name" data-profile-id="${authorUserId || ''}">
-            ${escapeHtml(authorName)}
-          </div>
+          <div class="message-user-name">${escapeHtml(authorName)}</div>
 
           <div class="message-user-sub">
             <span>${timeAgo(message.createdAt)}</span>
-            ${message.edited ? '<span>editado</span>' : ''}
+            ${message.edited ? '<span>Editado</span>' : ''}
           </div>
         </div>
       </div>
@@ -560,37 +680,54 @@ function renderMessageCard(message) {
     ${renderMessageMedia(message)}
 
     <div class="message-actions">
-      <button class="action-btn reply-btn">Responder</button>
-      <button class="action-btn like-btn">Like ${message.likes || 0}</button>
-      ${canEdit ? '<button class="action-btn edit-btn">Editar</button>' : ''}
-      ${canEdit ? '<button class="action-btn danger delete-btn">Eliminar</button>' : ''}
+      <button class="action-btn reply-btn">
+        <i class="fa-solid fa-reply"></i>
+        <span>Responder</span>
+      </button>
+
+      <button class="action-btn like-btn">
+        <i class="fa-regular fa-heart"></i>
+        <span>${message.likes || 0}</span>
+      </button>
+
+      ${canEdit ? `
+        <button class="action-btn edit-btn">
+          <i class="fa-regular fa-pen-to-square"></i>
+          <span>Editar</span>
+        </button>
+      ` : ''}
+
+      ${canEdit ? `
+        <button class="action-btn danger delete-btn">
+          <i class="fa-regular fa-trash-can"></i>
+          <span>Eliminar</span>
+        </button>
+      ` : ''}
     </div>
 
     <div class="replies" id="replies-${message._id}"></div>
   `;
 
-  const avatarNode = card.querySelector('.message-avatar');
+  const avatarNode = article.querySelector('.message-avatar');
+  const nameNode = article.querySelector('.message-user-name');
+
   renderAvatar(avatarNode, authorName, authorAvatar);
 
-  avatarNode.addEventListener('click', () => {
-    if (authorUserId) window.location.href = `/profile.html?id=${authorUserId}`;
-  });
+  if (authorUserId) {
+    avatarNode.addEventListener('click', () => goToProfile(authorUserId));
+    nameNode.addEventListener('click', () => goToProfile(authorUserId));
+  }
 
-  card.querySelector('.message-user-name').addEventListener('click', () => {
-    if (authorUserId) window.location.href = `/profile.html?id=${authorUserId}`;
-  });
+  article.querySelector('.reply-btn')?.addEventListener('click', () => showReplyForm(message._id));
+  article.querySelector('.like-btn')?.addEventListener('click', () => likeMessage(message._id));
+  article.querySelector('.edit-btn')?.addEventListener('click', () => editMessage(message));
+  article.querySelector('.delete-btn')?.addEventListener('click', () => deleteMessage(message._id));
 
-  card.querySelector('.reply-btn').addEventListener('click', () => showReplyForm(message._id));
-  card.querySelector('.like-btn').addEventListener('click', () => likeMessage(message._id));
-
-  card.querySelector('.edit-btn')?.addEventListener('click', () => editMessage(message));
-  card.querySelector('.delete-btn')?.addEventListener('click', () => deleteMessage(message._id));
-
-  card.querySelectorAll('.message-media img').forEach((img) => {
+  article.querySelectorAll('.message-media img').forEach((img) => {
     img.addEventListener('click', () => window.open(img.src, '_blank'));
   });
 
-  messagesContainer.appendChild(card);
+  messagesContainer.appendChild(article);
   loadReplies(message._id);
 }
 
@@ -600,43 +737,41 @@ async function loadReplies(messageId) {
     if (!container) return;
 
     const response = await fetch(`${API_BASE}/messages/${messageId}/replies`);
-    const replies = await response.json();
+    const data = await response.json();
 
     if (!response.ok) return;
 
     container.innerHTML = '';
 
-    replies.forEach((reply) => {
+    data.forEach((reply) => {
       const item = document.createElement('div');
       item.className = 'reply-item';
 
-      const name = reply.author?.name || 'Anónimo';
-      const avatar = reply.author?.avatar || null;
-      const userId = reply.author?.userId || null;
+      const replyName = reply.author?.name || 'Anónimo';
+      const replyAvatar = reply.author?.avatar || null;
+      const replyUserId = reply.author?.userId || null;
 
       item.innerHTML = `
         <div class="reply-top">
           <div class="reply-avatar"></div>
+
           <div>
-            <div class="reply-name">${escapeHtml(name)}</div>
+            <div class="reply-name">${escapeHtml(replyName)}</div>
             <div class="reply-date">${timeAgo(reply.createdAt)}</div>
           </div>
         </div>
+
         <div class="reply-content">${escapeHtml(reply.content || '')}</div>
       `;
 
       const avatarNode = item.querySelector('.reply-avatar');
-      renderAvatar(avatarNode, name, avatar);
+      const nameNode = item.querySelector('.reply-name');
 
-      const replyName = item.querySelector('.reply-name');
-      if (userId) {
-        replyName.addEventListener('click', () => {
-          window.location.href = `/profile.html?id=${userId}`;
-        });
+      renderAvatar(avatarNode, replyName, replyAvatar);
 
-        avatarNode.addEventListener('click', () => {
-          window.location.href = `/profile.html?id=${userId}`;
-        });
+      if (replyUserId) {
+        avatarNode.addEventListener('click', () => goToProfile(replyUserId));
+        nameNode.addEventListener('click', () => goToProfile(replyUserId));
       }
 
       container.appendChild(item);
@@ -658,21 +793,32 @@ function showReplyForm(messageId) {
   form.innerHTML = `
     ${currentUser ? '' : '<input type="text" class="reply-author-input" placeholder="Tu nombre, opcional" maxlength="50">'}
     <textarea class="reply-content-input" placeholder="Escribe tu respuesta"></textarea>
+
     <div class="reply-form-actions">
-      <button class="primary-btn submit-reply-btn">Responder</button>
-      <button class="secondary-btn cancel-reply-btn">Cancelar</button>
+      <button class="primary-btn submit-reply-btn">
+        <i class="fa-solid fa-paper-plane"></i>
+        <span>Responder</span>
+      </button>
+
+      <button class="secondary-btn cancel-reply-btn">
+        <i class="fa-solid fa-xmark"></i>
+        <span>Cancelar</span>
+      </button>
     </div>
   `;
 
   container.prepend(form);
 
-  form.querySelector('.cancel-reply-btn').addEventListener('click', () => form.remove());
+  form.querySelector('.cancel-reply-btn')?.addEventListener('click', () => form.remove());
 
-  form.querySelector('.submit-reply-btn').addEventListener('click', async () => {
+  form.querySelector('.submit-reply-btn')?.addEventListener('click', async () => {
     try {
       const content = form.querySelector('.reply-content-input').value.trim();
-      const authorInput = form.querySelector('.reply-author-input');
-      const author = currentUser ? currentUser.username : (authorInput?.value.trim() || 'Anónimo');
+      const guestInput = form.querySelector('.reply-author-input');
+
+      const author = currentUser
+        ? currentUser.username
+        : (guestInput?.value.trim() || 'Anónimo');
 
       if (!content) {
         showToast('Escribe una respuesta', 'error');
@@ -719,9 +865,9 @@ async function likeMessage(messageId) {
       throw new Error(data.error || 'No se pudo dar like');
     }
 
-    const target = allMessages.find((m) => m._id === messageId);
-    if (target) {
-      target.likes = data.likes;
+    const message = allMessages.find((m) => m._id === messageId);
+    if (message) {
+      message.likes = data.likes;
       renderFeed();
     }
   } catch (error) {
@@ -757,7 +903,8 @@ async function editMessage(message) {
 }
 
 async function deleteMessage(messageId) {
-  if (!confirm('¿Eliminar este mensaje?')) return;
+  const ok = confirm('¿Eliminar este mensaje?');
+  if (!ok) return;
 
   try {
     const response = await fetch(`${API_BASE}/messages/${messageId}`, {
@@ -780,11 +927,15 @@ async function deleteMessage(messageId) {
   }
 }
 
+function goToProfile(userId) {
+  if (!userId) return;
+  window.location.href = `/profile.html?id=${userId}`;
+}
+
 async function init() {
   await loadCurrentUser();
-  updateAuthUI();
+  updateUIFromSession();
   await loadMessages();
 }
 
 init();
-setInterval(loadMessages, 12000);
