@@ -1,112 +1,128 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Foro34 - Community Forum</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="/css/styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Foro34</title>
+  <link rel="stylesheet" href="/css/styles.css" />
 </head>
-<body class="dark-mode">
-  <div class="app-container">
-    <!-- Sidebar -->
+<body>
+  <div class="app-shell">
     <aside class="sidebar">
-      <div class="sidebar-top">
-        <div class="logo">
-          <div class="logo-icon">
-            <i class="fas fa-comments"></i>
-          </div>
-          <span class="logo-text">Foro34</span>
+      <div class="brand">
+        <div class="brand-mark">34</div>
+        <div class="brand-copy">
+          <strong>Foro34</strong>
+          <span>community forum</span>
         </div>
-
-        <nav class="nav-menu">
-          <button class="nav-item active" data-filter="recent">
-            <i class="fas fa-home"></i>
-            <span>Para ti</span>
-          </button>
-          <button class="nav-item" data-filter="trending">
-            <i class="fas fa-fire"></i>
-            <span>Trending</span>
-          </button>
-          <button class="nav-item" data-filter="myMessages">
-            <i class="fas fa-comment-dots"></i>
-            <span>Mis Posts</span>
-          </button>
-        </nav>
       </div>
 
-      <div class="sidebar-bottom" id="authSection"></div>
+      <nav class="sidebar-nav">
+        <button class="nav-btn active" data-filter="recent">Inicio</button>
+        <button class="nav-btn" data-filter="trending">Popular</button>
+        <button class="nav-btn" data-filter="myMessages">Mis mensajes</button>
+      </nav>
+
+      <div class="sidebar-box" id="authSection"></div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="main-container">
-      <!-- Top Bar -->
-      <header class="header-bar">
-        <div class="search-container">
-          <i class="fas fa-search search-icon"></i>
-          <input type="text" placeholder="Buscar..." id="searchInput" class="search-input">
+    <main class="main">
+      <header class="topbar glass">
+        <div class="topbar-left">
+          <h1>Feed</h1>
+          <p>Comunidad abierta, perfiles reales opcionales</p>
         </div>
-        <div class="header-actions">
-          <button class="notification-btn">
-            <i class="fas fa-bell"></i>
-            <span class="notification-badge">0</span>
-          </button>
+
+        <div class="topbar-right">
+          <div class="search">
+            <input type="text" id="searchInput" placeholder="Buscar mensajes..." />
+          </div>
         </div>
       </header>
 
-      <!-- Content Area -->
-      <div class="content-area">
-        <!-- Create Post Section -->
-        <section class="create-post-card">
-          <div class="post-header">
-            <div class="user-avatar-small" id="myAvatarSmall">
-              <i class="fas fa-user"></i>
+      <section class="layout-grid">
+        <div class="feed-column">
+          <section class="composer glass">
+            <div class="composer-head">
+              <div class="composer-avatar" id="composerAvatar"></div>
+
+              <div class="composer-user">
+                <strong id="composerUserName">Invitado</strong>
+                <span id="composerUserMeta">Publicación rápida</span>
+              </div>
             </div>
-            <div class="post-input-wrapper">
-              <textarea id="messageContent" placeholder="¿Qué está pasando?!" class="post-textarea"></textarea>
-              <input type="text" id="authorName" placeholder="Tu nombre" class="post-author" hidden>
+
+            <div class="composer-body">
+              <input
+                type="text"
+                id="authorName"
+                class="guest-name-input"
+                placeholder="Tu nombre, opcional"
+                maxlength="50"
+              />
+
+              <textarea
+                id="messageContent"
+                placeholder="Comparte algo con la comunidad"
+                rows="5"
+                maxlength="5000"
+              ></textarea>
+
+              <div id="mediaPreview" class="media-preview"></div>
             </div>
-          </div>
 
-          <div class="post-media-section">
-            <label class="media-btn-icon">
-              <i class="fas fa-image"></i>
-              <input type="file" id="imageInput" accept="image/*" multiple hidden>
-            </label>
-            <label class="media-btn-icon">
-              <i class="fas fa-video"></i>
-              <input type="file" id="videoInput" accept="video/*" hidden>
-            </label>
-          </div>
+            <div class="composer-actions">
+              <div class="composer-tools">
+                <label class="tool-btn">
+                  <input type="file" id="imageInput" accept="image/*" multiple hidden />
+                  Imagen
+                </label>
 
-          <div id="mediaPreview" class="media-preview-grid"></div>
+                <label class="tool-btn">
+                  <input type="file" id="videoInput" accept="video/*" hidden />
+                  Video
+                </label>
+              </div>
 
-          <button id="sendBtn" class="btn-post">
-            <i class="fas fa-paper-plane"></i> Publicar
-          </button>
-        </section>
+              <button id="sendBtn" class="primary-btn">Publicar</button>
+            </div>
+          </section>
 
-        <!-- Messages Feed -->
-        <div id="loading" class="loading-skeleton">
-          <div class="skeleton-card"></div>
-          <div class="skeleton-card"></div>
-          <div class="skeleton-card"></div>
+          <div id="loading" class="loading-state">Cargando mensajes...</div>
+          <section id="messagesContainer" class="feed-list"></section>
         </div>
 
-        <div id="messagesContainer" class="feed-container"></div>
-      </div>
+        <aside class="rightbar">
+          <div class="panel glass">
+            <h3>Foro34</h3>
+            <p>
+              Foro público con login opcional, respuestas, multimedia y perfiles
+              personalizados.
+            </p>
+          </div>
+
+          <div class="panel glass">
+            <h3>Consejos</h3>
+            <ul class="tips">
+              <li>Usa login para publicar con tu perfil y foto.</li>
+              <li>Los invitados pueden publicar sin cuenta.</li>
+              <li>Haz clic en un nombre para ver su perfil.</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
     </main>
   </div>
 
-  <!-- Auth Modal -->
-  <div id="authModal" class="modal-overlay hidden">
-    <div class="modal-window">
-      <button class="modal-close" onclick="closeAuthModal()">
-        <i class="fas fa-times"></i>
-      </button>
-      <div id="authForm" class="auth-form"></div>
+  <div id="authModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card glass">
+      <button class="modal-close" id="closeAuthModalBtn">×</button>
+      <div id="authForm"></div>
     </div>
   </div>
+
+  <div id="toastContainer" class="toast-container"></div>
 
   <script src="/js/client.js"></script>
 </body>
