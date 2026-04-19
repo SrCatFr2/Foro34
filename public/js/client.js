@@ -285,8 +285,7 @@ function renderMessage(message) {
 
   div.innerHTML = `
     <div class="message-header">
-      <span class="message-author">${escapeHtml(message.author.name)}</span>
-      <span class="message-time">${date}${message.edited ? ' (editado)' : ''}</span>
+<span class="message-author" style="cursor: pointer;" onclick="goToProfile('${message.author.userId}')">${escapeHtml(message.author.name)}</span>      <span class="message-time">${date}${message.edited ? ' (editado)' : ''}</span>
     </div>
     <div class="message-content">${escapeHtml(message.content)}</div>
     ${renderMedia(message)}
