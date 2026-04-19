@@ -34,6 +34,11 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Contenido vacío' });
     }
 
+    await User.findByIdAndUpdate(
+  req.userId,
+  { $inc: { 'stats.messageCount': 1 } }
+);
+
     const newMessage = new Message({
       author: {
         name: author.substring(0, 50),
