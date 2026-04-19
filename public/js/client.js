@@ -486,6 +486,12 @@ async function likeMessage(messageId) {
   }
 }
 
+function goToProfile(userId) {
+  if (userId) {
+    window.location.href = `/profile.html?id=${userId}`;
+  }
+} 
+
 // === INICIALIZACIÓN ===
 if (token) {
   updateAuthUI();
