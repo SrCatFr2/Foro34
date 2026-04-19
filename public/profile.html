@@ -4,109 +4,161 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Perfil - Foro34</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/styles.css">
-  <link rel="stylesheet" href="/css/profile.css">
+  <style>
+    .profile-wrapper {
+      background: var(--bg-primary);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .profile-card {
+      max-width: 600px;
+      margin: 0 auto;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .profile-banner {
+      height: 200px;
+      background: var(--gradient-1);
+      position: relative;
+    }
+
+    .profile-avatar-large {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 4px solid var(--bg-secondary);
+      position: absolute;
+      bottom: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gradient-1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 50px;
+      color: white;
+      font-weight: 700;
+      overflow: hidden;
+    }
+
+    .profile-avatar-large img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-content {
+      padding: 80px 24px 24px;
+      text-align: center;
+    }
+
+    .profile-name {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .profile-email {
+      color: var(--text-tertiary);
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .profile-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      padding: 20px 0;
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      margin: 20px 0;
+    }
+
+    .profile-stat {
+      text-align: center;
+    }
+
+    .profile-stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent-primary);
+    }
+
+    .profile-stat-label {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .profile-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .profile-bio {
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+
+    .profile-messages {
+      margin-top: 24px;
+      text-align: left;
+    }
+
+    .profile-messages h3 {
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+
+    .message-item {
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+      .profile-wrapper {
+        padding: 12px;
+      }
+
+      .profile-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
-<body>
-  <div class="container">
-    <header>
-      <h1><a href="/">🌐 Foro34</a></h1>
-      <div class="auth-section" id="authSection"></div>
-    </header>
-
-    <main>
-      <!-- Perfil del Usuario -->
-      <div id="profileContainer" class="profile-container">
-        <!-- Banner -->
-        <div id="profileBanner" class="profile-banner"></div>
-
-        <!-- Información Principal -->
-        <div class="profile-header">
-          <div class="profile-avatar-container">
-            <img id="profileAvatar" class="profile-avatar" src="" alt="Avatar">
-            <div id="editAvatarBtn" class="edit-avatar hidden">📷 Cambiar</div>
-          </div>
-
-          <div class="profile-info">
-            <h2 id="profileUsername"></h2>
-            <p id="profileBio" class="profile-bio"></p>
-            
-            <div class="profile-details">
-              <span id="profileLocation"></span>
-              <span id="profileWebsite"></span>
-              <span id="profileJoinDate"></span>
-            </div>
-
-            <div id="editProfileBtn" class="btn-primary" style="display: none;">
-              ✏️ Editar Perfil
-            </div>
-          </div>
-        </div>
-
-        <!-- Estadísticas -->
-        <div class="profile-stats">
-          <div class="stat">
-            <span class="stat-number" id="statMessages">0</span>
-            <span class="stat-label">Mensajes</span>
-          </div>
-          <div class="stat">
-            <span class="stat-number" id="statLikes">0</span>
-            <span class="stat-label">Likes Recibidos</span>
-          </div>
-          <div class="stat">
-            <span class="stat-number" id="statFollowers">0</span>
-            <span class="stat-label">Seguidores</span>
-          </div>
-        </div>
-
-        <!-- Badges -->
-        <div id="badgesContainer" class="badges-container"></div>
+<body class="dark-mode">
+  <div class="profile-wrapper">
+    <div class="profile-card" id="profileContainer">
+      <div class="profile-banner"></div>
+      <div class="profile-content">
+        <div class="profile-avatar-large"><i class="fas fa-user"></i></div>
+        <div class="profile-name" id="profileName">Cargando...</div>
+        <div class="profile-email" id="profileEmail"></div>
+        <div class="profile-bio" id="profileBio"></div>
+        <div class="profile-stats" id="profileStats"></div>
+        <div class="profile-actions" id="profileActions"></div>
+        <div class="profile-messages" id="profileMessages"></div>
       </div>
-
-      <!-- Modal de Edición de Perfil -->
-      <div id="editProfileModal" class="modal hidden">
-        <div class="modal-content">
-          <span class="close">&times;</span>
-          <h2>Editar Perfil</h2>
-
-          <div class="form-group">
-            <label>Bio</label>
-            <textarea id="editBio" maxlength="500" rows="4" placeholder="Cuéntanos sobre ti..."></textarea>
-            <small id="bioCount">0/500</small>
-          </div>
-
-          <div class="form-group">
-            <label>Ubicación</label>
-            <input type="text" id="editLocation" maxlength="100" placeholder="Ciudad, País">
-          </div>
-
-          <div class="form-group">
-            <label>Sitio Web</label>
-            <input type="url" id="editWebsite" placeholder="https://...">
-          </div>
-
-          <div class="form-group">
-            <label>Color de Tema</label>
-            <div class="color-picker">
-              <button class="color-btn" data-color="blue" style="background: #667eea;"></button>
-              <button class="color-btn" data-color="purple" style="background: #764ba2;"></button>
-              <button class="color-btn" data-color="pink" style="background: #f093fb;"></button>
-              <button class="color-btn" data-color="green" style="background: #4ade80;"></button>
-              <button class="color-btn" data-color="orange" style="background: #fb923c;"></button>
-              <button class="color-btn" data-color="red" style="background: #ef4444;"></button>
-            </div>
-          </div>
-
-          <button id="saveProfileBtn" class="btn-primary btn-large">Guardar Cambios</button>
-        </div>
-      </div>
-
-      <!-- Mensajes del Usuario -->
-      <section class="user-messages">
-        <h3>Últimos Mensajes</h3>
-        <div id="userMessagesContainer"></div>
-      </section>
-    </main>
+    </div>
   </div>
 
   <script src="/js/profile.js"></script>
