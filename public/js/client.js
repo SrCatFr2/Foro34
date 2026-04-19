@@ -103,6 +103,7 @@ async function authenticate() {
 
     closeAuthModal();
     updateAuthUI();
+    updateAuthorNameInput();
     alert('¡Bienvenido ' + (currentUser.username || currentUser.email) + '!');
   } catch (error) {
     alert('Error: ' + error.message);
@@ -114,6 +115,10 @@ function updateAuthUI() {
 
   if (token && currentUser) {
     authSection.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <img src="${currentUser.profile?.avatar || 'https://ui-avatars.com/api/?name=User'}" style="width: 32px; height: 32px; border-radius: 50%;" alt="Avatar">
+        <span style="color: var(--text); font-weight: 600;">${currentUser.username}</span>
+      </div>
       <a href="/profile.html" class="btn-secondary">👤 Mi Perfil</a>
       <button id="logoutBtn" class="btn-secondary">Cerrar Sesión</button>
     `;
@@ -128,11 +133,26 @@ function updateAuthUI() {
   }
 }
 
+function updateAuthorNameInput() {
+  if (token && currentUser) {
+    authorNameInput.value = currentUser.username;
+    authorNameInput.disabled = true;
+    authorNameInput.style.opacity = '0.6';
+    authorNameInput.title = 'Tu nombre de usuario se usa automáticamente';
+  } else {
+    authorNameInput.value = '';
+    authorNameInput.disabled = false;
+    authorNameInput.style.opacity = '1';
+    authorNameInput.title = '';
+  }
+}
+
 function logout() {
   token = null;
   currentUser = null;
   localStorage.removeItem('token');
   updateAuthUI();
+  updateAuthorNameInput();
   alert('Sesión cerrada');
 }
 
@@ -188,7 +208,14 @@ async function uploadFile(file) {
 async function sendMessage() {
   try {
     const content = messageContentInput.value.trim();
-    const author = authorNameInput.value.trim() || 'Anónimo';
+    let author = '';
+
+    // Si está loggeado, usar el nombre de usuario
+    if (token && currentUser) {
+      author = currentUser.username;
+    } else {
+      author = authorNameInput.value.trim() || 'Anónimo';
+    }
 
     if (!content) {
       alert('Por favor escribe un mensaje');
@@ -238,7 +265,7 @@ async function sendMessage() {
     }
 
     messageContentInput.value = '';
-    authorNameInput.value = '';
+    if (!token) authorNameInput.value = '';
     selectedFiles = { images: [], videos: [] };
     mediaPreview.innerHTML = '';
     imageInput.value = '';
@@ -317,13 +344,31 @@ function renderMessage(message) {
     `;
   }
 
-  const authorLink = message.author.userId 
-    ? `<span class="message-author" style="cursor: pointer;" onclick="goToProfile('${message.author.userId}')">${escapeHtml(message.author.name)}</span>`
-    : `<span class="message-author">${escapeHtml(message.author.name)}</span>`;
+  // Crear header con avatar y nombre
+  let authorSection = '';
+  if (message.author.userId) {
+    // Usuario registrado - mostrar con perfil clickeable
+    const userAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(message.author.name)}&background=667eea&color=fff`;
+    authorSection = `
+      <div class="message-author-section">
+        <img src="${userAvatar}" class="message-avatar" onclick="goToProfile('${message.author.userId}')" style="cursor: pointer;" alt="${message.author.name}">
+        <span class="message-author" style="cursor: pointer;" onclick="goToProfile('${message.author.userId}')">${escapeHtml(message.author.name)}</span>
+      </div>
+    `;
+  } else {
+    // Usuario anónimo
+    const userAvatar = `https://ui-avatars.com/api/?name=Anónimo&background=999999&color=fff`;
+    authorSection = `
+      <div class="message-author-section">
+        <img src="${userAvatar}" class="message-avatar" alt="Anónimo">
+        <span class="message-author">${escapeHtml(message.author.name)}</span>
+      </div>
+    `;
+  }
 
   div.innerHTML = `
     <div class="message-header">
-      ${authorLink}
+      ${authorSection}
       <span class="message-time">${date}${message.edited ? ' (editado)' : ''}</span>
     </div>
     <div class="message-content">${escapeHtml(message.content)}</div>
@@ -392,13 +437,29 @@ async function loadReplies(messageId) {
       replyDiv.className = 'reply';
 
       const date = new Date(reply.createdAt).toLocaleString('es-ES');
-      const authorLink = reply.author.userId 
-        ? `<span class="message-author" style="cursor: pointer;" onclick="goToProfile('${reply.author.userId}')">${escapeHtml(reply.author.name)}</span>`
-        : `<span class="message-author">${escapeHtml(reply.author.name)}</span>`;
+      
+      let replyAuthorSection = '';
+      if (reply.author.userId) {
+        const userAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.author.name)}&background=667eea&color=fff`;
+        replyAuthorSection = `
+          <div class="message-author-section">
+            <img src="${userAvatar}" class="message-avatar" onclick="goToProfile('${reply.author.userId}')" style="cursor: pointer;" alt="${reply.author.name}">
+            <span class="message-author" style="cursor: pointer;" onclick="goToProfile('${reply.author.userId}')">${escapeHtml(reply.author.name)}</span>
+          </div>
+        `;
+      } else {
+        const userAvatar = `https://ui-avatars.com/api/?name=Anónimo&background=999999&color=fff`;
+        replyAuthorSection = `
+          <div class="message-author-section">
+            <img src="${userAvatar}" class="message-avatar" alt="Anónimo">
+            <span class="message-author">${escapeHtml(reply.author.name)}</span>
+          </div>
+        `;
+      }
 
       replyDiv.innerHTML = `
         <div class="message-header">
-          ${authorLink}
+          ${replyAuthorSection}
           <span class="message-time">${date}</span>
         </div>
         <div class="message-content">${escapeHtml(reply.content)}</div>
@@ -417,8 +478,17 @@ function showReplyForm(messageId) {
 
   const form = document.createElement('div');
   form.className = 'reply-form';
+  
+  let replyAuthorPlaceholder = 'Tu nombre (opcional)';
+  let replyAuthorValue = '';
+  
+  if (token && currentUser) {
+    replyAuthorPlaceholder = currentUser.username;
+    replyAuthorValue = currentUser.username;
+  }
+
   form.innerHTML = `
-    <input type="text" placeholder="Tu nombre" class="reply-author" maxlength="50">
+    <input type="text" placeholder="${replyAuthorPlaceholder}" class="reply-author" maxlength="50" value="${replyAuthorValue}" ${token ? 'disabled' : ''}>
     <textarea placeholder="Escribe tu respuesta..." rows="3" class="reply-content" maxlength="5000"></textarea>
     <div style="display: flex; gap: 10px;">
       <button class="btn-small btn-primary submit-reply" data-id="${messageId}">Enviar</button>
@@ -429,7 +499,8 @@ function showReplyForm(messageId) {
   repliesContainer.appendChild(form);
 
   form.querySelector('.submit-reply').addEventListener('click', async () => {
-    const author = form.querySelector('.reply-author').value.trim() || 'Anónimo';
+    let author = form.querySelector('.reply-author').value.trim();
+    if (!author) author = 'Anónimo';
     const content = form.querySelector('.reply-content').value.trim();
 
     if (!content) {
@@ -540,12 +611,32 @@ function goToProfile(userId) {
 }
 
 // === INICIALIZACIÓN ===
-if (token) {
+async function initializeApp() {
+  if (token) {
+    try {
+      const response = await fetch('/api/auth/profile', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        currentUser = await response.json();
+      } else {
+        token = null;
+        localStorage.removeItem('token');
+      }
+    } catch (error) {
+      console.error('Error cargando perfil:', error);
+      token = null;
+      localStorage.removeItem('token');
+    }
+  }
+
   updateAuthUI();
+  updateAuthorNameInput();
+  loadMessages();
 }
 
-loadMessages();
-updateAuthUI();
+initializeApp();
 
 // Recargar mensajes cada 8 segundos
 setInterval(loadMessages, 8000);
