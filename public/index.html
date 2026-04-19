@@ -10,7 +10,7 @@
   <div class="container">
     <header>
       <div class="header-content">
-        <h1>🌐 Foro34</h1>
+        <h1><a href="/" style="text-decoration: none; color: var(--primary);">🌐 Foro34</a></h1>
         <div class="auth-section" id="authSection">
           <button id="loginBtn" class="btn-primary">Iniciar Sesión</button>
           <button id="registerBtn" class="btn-secondary">Registrarse</button>
@@ -46,6 +46,13 @@
         </div>
 
         <button id="sendBtn" class="btn-primary btn-large">Publicar Mensaje</button>
+      </section>
+
+      <!-- Filtros -->
+      <section class="filters-section">
+        <button class="filter-btn active" data-filter="recent">📅 Recientes</button>
+        <button class="filter-btn" data-filter="trending">🔥 Trending</button>
+        <button class="filter-btn" data-filter="myMessages">💬 Mis Mensajes</button>
       </section>
 
       <!-- Loading indicator -->
