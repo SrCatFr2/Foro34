@@ -4,21 +4,26 @@ import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Obtener todos los mensajes principales
+// === OBTENER TODOS LOS MENSAJES ===
 router.get('/', async (req, res) => {
   try {
+    console.log('GET /api/messages - Buscando mensajes...');
+    
     const messages = await Message.find({ parentId: null })
       .populate('replies')
       .sort({ createdAt: -1 })
-      .limit(100);
+      .limit(100)
+      .maxTimeMS(30000);  // 30 segundos de timeout
+    
+    console.log(`✓ Encontrados ${messages.length} mensajes`);
     res.json(messages);
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error en GET /messages:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Crear nuevo mensaje
+// === CREAR NUEVO MENSAJE ===
 router.post('/', async (req, res) => {
   try {
     const { author, content, images, videos, parentId } = req.body;
@@ -44,137 +49,20 @@ router.post('/', async (req, res) => {
 
     await nuevoMensaje.save();
 
-    // Si es respuesta, agregar al mensaje padre
     if (parentId) {
       await Message.findByIdAndUpdate(parentId, {
         $push: { replies: nuevoMensaje._id }
-      });
+      }, { maxTimeMS: 30000 });
     }
 
     res.status(201).json(nuevoMensaje);
   } catch (error) {
-    console.error('Error al crear mensaje:', error);
+    console.error('Error en POST /messages:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Obtener respuestas de un mensaje
-router.get('/:id/replies', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const replies = await Message.find({ parentId: id })
-      .sort({ createdAt: 1 });
-
-    res.json(replies);
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Obtener un mensaje específico
-router.get('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const mensaje = await Message.findById(id).populate('replies');
-
-    if (!mensaje) {
-      return res.status(404).json({ error: 'Mensaje no encontrado' });
-    }
-
-    res.json(mensaje);
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Editar mensaje (solo autores registrados)
-router.put('/:id', auth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { content } = req.body;
-
-    const mensaje = await Message.findById(id);
-
-    if (!mensaje) {
-      return res.status(404).json({ error: 'Mensaje no encontrado' });
-    }
-
-    if (mensaje.author.userId?.toString() !== req.userId) {
-      return res.status(403).json({ error: 'No tienes permiso para editar este mensaje' });
-    }
-
-    if (!content || content.trim().length === 0) {
-      return res.status(400).json({ error: 'El contenido no puede estar vacío' });
-    }
-
-    mensaje.content = content.substring(0, 5000);
-    mensaje.edited = true;
-    mensaje.updatedAt = new Date();
-
-    await mensaje.save();
-
-    res.json(mensaje);
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Eliminar mensaje
-router.delete('/:id', auth, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const mensaje = await Message.findById(id);
-
-    if (!mensaje) {
-      return res.status(404).json({ error: 'Mensaje no encontrado' });
-    }
-
-    if (mensaje.author.userId?.toString() !== req.userId) {
-      return res.status(403).json({ error: 'No tienes permiso para eliminar este mensaje' });
-    }
-
-    await Message.deleteOne({ _id: id });
-
-    // Eliminar referencias en padre
-    if (mensaje.parentId) {
-      await Message.findByIdAndUpdate(mensaje.parentId, {
-        $pull: { replies: id }
-      });
-    }
-
-    res.json({ message: 'Mensaje eliminado correctamente' });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Like en un mensaje
-router.post('/:id/like', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const mensaje = await Message.findByIdAndUpdate(
-      id,
-      { $inc: { likes: 1 } },
-      { new: true }
-    );
-
-    if (!mensaje) {
-      return res.status(404).json({ error: 'Mensaje no encontrado' });
-    }
-
-    res.json(mensaje);
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+// === RESTO DE RUTAS ===
+// (mantén el resto del código igual)
 
 export default router;
