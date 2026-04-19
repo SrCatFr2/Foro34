@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Foro34 - Foro de Mensajes</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Foro34</h1>
+      <div class="auth-section" id="authSection">
+        <button id="loginBtn" class="btn-primary">Iniciar Sesión</button>
+        <button id="registerBtn" class="btn-secondary">Registrarse</button>
+      </div>
+    </header>
+
+    <!-- Modal de Autenticación -->
+    <div id="authModal" class="modal hidden">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="authForm">
+          <h2>Iniciar Sesión</h2>
+          <input type="email" id="email" placeholder="Email">
+          <input type="password" id="password" placeholder="Contraseña">
+          <button id="submitAuth" class="btn-primary">Enviar</button>
+          <p>¿No tienes cuenta? <a href="#" id="switchToRegister">Registrarse</a></p>
+        </div>
+      </div>
+    </div>
+
+    <main>
+      <!-- Crear mensaje -->
+      <section id="createMessage" class="create-section">
+        <input type="text" id="authorName" placeholder="Tu nombre" maxlength="50">
+        <textarea id="messageContent" placeholder="Escribe tu mensaje..." rows="4"></textarea>
+        
+        <div class="media-section">
+          <input type="file" id="imageInput" accept="image/*" multiple>
+          <input type="file" id="videoInput" accept="video/*">
+          <div id="mediaPreview"></div>
+        </div>
+
+        <button id="sendBtn" class="btn-primary">Publicar Mensaje</button>
+      </section>
+
+      <!-- Lista de mensajes -->
+      <section id="messagesContainer" class="messages-container">
+        <!-- Los mensajes se cargarán aquí -->
+      </section>
+    </main>
+  </div>
+
+  <script src="/js/client.js"></script>
+</body>
+</html>
