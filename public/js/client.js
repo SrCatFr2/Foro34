@@ -47,9 +47,7 @@ function showToast(message, type = 'success') {
   toast.textContent = message;
   toastContainer.appendChild(toast);
 
-  setTimeout(() => {
-    toast.remove();
-  }, 2600);
+  setTimeout(() => toast.remove(), 2600);
 }
 
 function escapeHtml(text = '') {
@@ -62,14 +60,14 @@ function getUserId(user) {
   return user?.id || user?._id || null;
 }
 
-function avatarDataUrl(name = 'U', bg = '#ff2e43', fg = '#ffffff') {
+function avatarDataUrl(name = 'U', bg = '#ff2b47', fg = '#ffffff') {
   const initial = (name.trim()[0] || 'U').toUpperCase();
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
       <defs>
         <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
           <stop offset="0%" stop-color="${bg}" />
-          <stop offset="100%" stop-color="#6f0d1d" />
+          <stop offset="100%" stop-color="#7a0e1f" />
         </linearGradient>
       </defs>
       <circle cx="64" cy="64" r="64" fill="url(#g)" />
@@ -104,44 +102,50 @@ function formatDate(dateString) {
   return new Date(dateString).toLocaleString('es-ES');
 }
 
+function isMobileView() {
+  return window.innerWidth <= 920;
+}
+
 function openSidebar() {
   sidebar.classList.add('open');
   mobileOverlay.classList.remove('hidden');
+  document.body.classList.add('sidebar-lock');
 }
 
 function closeSidebar() {
   sidebar.classList.remove('open');
   mobileOverlay.classList.add('hidden');
+  document.body.classList.remove('sidebar-lock');
 }
 
 sidebarOpenBtn?.addEventListener('click', openSidebar);
 sidebarCloseBtn?.addEventListener('click', closeSidebar);
 mobileOverlay?.addEventListener('click', closeSidebar);
 
-quickRecentBtn?.addEventListener('click', () => {
-  setFilter('recent');
+window.addEventListener('resize', () => {
+  if (!isMobileView()) {
+    closeSidebar();
+  }
 });
 
-quickTrendingBtn?.addEventListener('click', () => {
-  setFilter('trending');
-});
-
-quickTopBtn?.addEventListener('click', () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-});
+quickRecentBtn?.addEventListener('click', () => setFilter('recent'));
+quickTrendingBtn?.addEventListener('click', () => setFilter('trending'));
+quickTopBtn?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
 document.querySelectorAll('.side-link').forEach((btn) => {
   btn.addEventListener('click', () => {
     setFilter(btn.dataset.filter);
-    closeSidebar();
+    if (isMobileView()) closeSidebar();
   });
 });
 
 function setFilter(filter) {
   currentFilter = filter;
-  document.querySelectorAll('.side-link').forEach((b) => {
-    b.classList.toggle('active', b.dataset.filter === filter);
+
+  document.querySelectorAll('.side-link').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
   });
+
   renderFeed();
 }
 
@@ -389,6 +393,7 @@ function updateUIFromSession() {
         <i class="fa-solid fa-right-to-bracket"></i>
         <span>Entrar</span>
       </button>
+
       <button class="primary-btn" id="topRegisterBtn">
         <i class="fa-solid fa-user-plus"></i>
         <span>Registro</span>
@@ -526,9 +531,7 @@ async function sendMessage() {
     videoInput.value = '';
     selectedFiles = { images: [], videos: [] };
 
-    if (!currentUser) {
-      authorNameInput.value = '';
-    }
+    if (!currentUser) authorNameInput.value = '';
 
     showToast('Mensaje publicado');
     await loadMessages();
@@ -569,7 +572,6 @@ async function loadMessages() {
 }
 
 function updateStats() {
-  const threads = allMessages.length;
   let replies = 0;
   let likes = 0;
 
@@ -578,7 +580,7 @@ function updateStats() {
     likes += msg.likes || 0;
   });
 
-  statThreads.textContent = threads;
+  statThreads.textContent = allMessages.length;
   statReplies.textContent = replies;
   statLikes.textContent = likes;
 }
