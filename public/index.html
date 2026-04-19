@@ -3,73 +3,96 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Foro34 - Foro de Mensajes</title>
+  <title>Foro34 - Community Forum</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="header-content">
-        <h1><a href="/" style="text-decoration: none; color: var(--primary);">🌐 Foro34</a></h1>
-        <div class="auth-section" id="authSection">
-          <button id="loginBtn" class="btn-primary">Iniciar Sesión</button>
-          <button id="registerBtn" class="btn-secondary">Registrarse</button>
+  <div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-icon">F34</div>
+          <span class="logo-text">Foro34</span>
         </div>
       </div>
-    </header>
 
-    <!-- Modal de Autenticación -->
-    <div id="authModal" class="modal hidden">
-      <div class="modal-content">
-        <span class="close">&times;</span>
-        <div id="authForm"></div>
-      </div>
-    </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-filter="recent">
+          <i class="fas fa-clock"></i>
+          <span>Recientes</span>
+        </button>
+        <button class="nav-item" data-filter="trending">
+          <i class="fas fa-fire"></i>
+          <span>Trending</span>
+        </button>
+        <button class="nav-item" data-filter="myMessages">
+          <i class="fas fa-comment-dots"></i>
+          <span>Mis Mensajes</span>
+        </button>
+      </nav>
 
-    <main>
-      <!-- Crear mensaje -->
-      <section id="createMessage" class="create-section">
-        <h2>Crear Mensaje</h2>
-        <input type="text" id="authorName" placeholder="Tu nombre (opcional)" maxlength="50">
-        <textarea id="messageContent" placeholder="Escribe tu mensaje..." rows="4" maxlength="5000"></textarea>
-        
-        <div class="media-section">
-          <label class="file-label">
-            📷 Agregar imágenes
-            <input type="file" id="imageInput" accept="image/*" multiple>
-          </label>
-          <label class="file-label">
-            🎥 Agregar video
-            <input type="file" id="videoInput" accept="video/*">
-          </label>
+      <div class="sidebar-footer" id="authSection"></div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="top-bar">
+        <h1>Community Forum</h1>
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Buscar mensajes..." id="searchInput">
+        </div>
+      </header>
+
+      <div class="content-wrapper">
+        <!-- Create Message Section -->
+        <section class="create-message-card">
+          <div class="create-header">
+            <h2>Crear Mensaje</h2>
+          </div>
+          <input type="text" id="authorName" placeholder="Tu nombre (se usa automáticamente si estás loggeado)" maxlength="50" class="input-field">
+          <textarea id="messageContent" placeholder="Escribe tu mensaje aquí..." rows="4" maxlength="5000" class="textarea-field"></textarea>
+          
+          <div class="media-controls">
+            <label class="media-btn">
+              <i class="fas fa-image"></i> Imágenes
+              <input type="file" id="imageInput" accept="image/*" multiple hidden>
+            </label>
+            <label class="media-btn">
+              <i class="fas fa-video"></i> Video
+              <input type="file" id="videoInput" accept="video/*" hidden>
+            </label>
+          </div>
+
           <div id="mediaPreview" class="media-preview"></div>
+
+          <button id="sendBtn" class="btn-primary btn-large">
+            <i class="fas fa-paper-plane"></i> Publicar Mensaje
+          </button>
+        </section>
+
+        <!-- Messages Container -->
+        <div id="loading" class="loading hidden">
+          <div class="spinner"></div>
+          <p>Cargando mensajes...</p>
         </div>
 
-        <button id="sendBtn" class="btn-primary btn-large">Publicar Mensaje</button>
-      </section>
-
-      <!-- Filtros -->
-      <section class="filters-section">
-        <button class="filter-btn active" data-filter="recent">📅 Recientes</button>
-        <button class="filter-btn" data-filter="trending">🔥 Trending</button>
-        <button class="filter-btn" data-filter="myMessages">💬 Mis Mensajes</button>
-      </section>
-
-      <!-- Loading indicator -->
-      <div id="loading" class="loading hidden">
-        <div class="spinner"></div>
-        <p>Cargando mensajes...</p>
+        <section id="messagesContainer" class="messages-list"></section>
       </div>
-
-      <!-- Lista de mensajes -->
-      <section id="messagesContainer" class="messages-container">
-        <!-- Los mensajes se cargarán aquí -->
-      </section>
     </main>
+  </div>
 
-    <footer>
-      <p>&copy; 2026 Foro34 - Todos los derechos reservados</p>
-    </footer>
+  <!-- Auth Modal -->
+  <div id="authModal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeAuthModal()"></div>
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeAuthModal()">
+        <i class="fas fa-times"></i>
+      </button>
+      <div id="authForm"></div>
+    </div>
   </div>
 
   <script src="/js/client.js"></script>
