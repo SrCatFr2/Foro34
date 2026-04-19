@@ -5,7 +5,7 @@ import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Registro
+// === REGISTRO ===
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -22,7 +22,16 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Usuario o email ya existe' });
     }
 
-    const nuevoUsuario = new User({ username, email, password });
+    const nuevoUsuario = new User({
+      username,
+      email,
+      password,
+      profile: {
+        avatar: `https://ui-avatars.com/api/?name=${username}&background=667eea&color=fff`,
+        color: ['blue', 'purple', 'pink', 'green', 'orange', 'red'][Math.floor(Math.random() * 6)]
+      }
+    });
+
     await nuevoUsuario.save();
 
     const token = jwt.sign(
@@ -33,11 +42,7 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({
       token,
-      user: {
-        id: nuevoUsuario._id,
-        username: nuevoUsuario.username,
-        email: nuevoUsuario.email
-      }
+      user: nuevoUsuario.toJSON()
     });
   } catch (error) {
     console.error('Error en registro:', error);
@@ -45,7 +50,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login
+// === LOGIN ===
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -74,11 +79,7 @@ router.post('/login', async (req, res) => {
 
     res.json({
       token,
-      user: {
-        id: usuario._id,
-        username: usuario.username,
-        email: usuario.email
-      }
+      user: usuario.toJSON()
     });
   } catch (error) {
     console.error('Error en login:', error);
@@ -86,14 +87,103 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Obtener perfil actual
+// === OBTENER PERFIL ACTUAL ===
 router.get('/profile', auth, async (req, res) => {
   try {
     const usuario = await User.findById(req.userId);
     if (!usuario) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
-    res.json(usuario);
+    res.json(usuario.toJSON());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// === OBTENER PERFIL PÚBLICO DE OTRO USUARIO ===
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const usuario = await User.findById(req.params.userId);
+    
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    if (!usuario.preferences.public) {
+      return res.status(403).json({ error: 'Perfil privado' });
+    }
+
+    res.json(usuario.toJSON());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// === ACTUALIZAR PERFIL ===
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const { bio, location, website, color, avatar, banner } = req.body;
+
+    const usuario = await User.findById(req.userId);
+
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    if (bio !== undefined) usuario.profile.bio = bio.substring(0, 500);
+    if (location !== undefined) usuario.profile.location = location.substring(0, 100);
+    if (website !== undefined) usuario.profile.website = website;
+    if (color && ['blue', 'purple', 'pink', 'green', 'orange', 'red'].includes(color)) {
+      usuario.profile.color = color;
+    }
+    if (avatar) usuario.profile.avatar = avatar;
+    if (banner) usuario.profile.banner = banner;
+
+    await usuario.save();
+
+    res.json(usuario.toJSON());
+  } catch (error) {
+    console.error('Error actualizando perfil:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// === CAMBIAR CONTRASEÑA ===
+router.post('/change-password', auth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Todos los campos requeridos' });
+    }
+
+    const usuario = await User.findById(req.userId);
+
+    const esValida = await usuario.comparePassword(currentPassword);
+
+    if (!esValida) {
+      return res.status(400).json({ error: 'Contraseña actual incorrecta' });
+    }
+
+    usuario.password = newPassword;
+    await usuario.save();
+
+    res.json({ message: 'Contraseña actualizada' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// === OBTENER ESTADÍSTICAS DEL USUARIO ===
+router.get('/stats/:userId', async (req, res) => {
+  try {
+    const usuario = await User.findById(req.params.userId);
+
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    res.json(usuario.stats);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
