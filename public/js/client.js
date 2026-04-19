@@ -1,4 +1,3 @@
-// === CONFIGURACIÓN ===
 const API_BASE = '/api';
 let token = localStorage.getItem('token');
 let currentUser = null;
@@ -6,7 +5,7 @@ let selectedFiles = { images: [], videos: [] };
 let currentFilter = 'recent';
 let allMessages = [];
 
-// === ELEMENTOS DEL DOM ===
+// DOM Elements
 const authModal = document.getElementById('authModal');
 const sendBtn = document.getElementById('sendBtn');
 const messagesContainer = document.getElementById('messagesContainer');
@@ -18,13 +17,12 @@ const mediaPreview = document.getElementById('mediaPreview');
 const loadingDiv = document.getElementById('loading');
 const searchInput = document.getElementById('searchInput');
 
-// === EVENT LISTENERS ===
+// Event Listeners
 sendBtn?.addEventListener('click', sendMessage);
 imageInput?.addEventListener('change', (e) => handleFileSelect(e, 'image'));
 videoInput?.addEventListener('change', (e) => handleFileSelect(e, 'video'));
 searchInput?.addEventListener('input', handleSearch);
 
-// Filtros
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', (e) => {
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -34,7 +32,7 @@ document.querySelectorAll('.nav-item').forEach(btn => {
   });
 });
 
-// === FUNCIONES PRINCIPALES ===
+// === FUNCTIONS ===
 
 function showAuthModal(type) {
   const form = document.getElementById('authForm');
@@ -42,23 +40,25 @@ function showAuthModal(type) {
   if (type === 'login') {
     form.innerHTML = `
       <h2>Iniciar Sesión</h2>
+      <p>Accede a tu cuenta para continuar</p>
       <input type="email" id="email" placeholder="Correo electrónico" required>
       <input type="password" id="password" placeholder="Contraseña" required>
-      <button id="submitAuth" class="btn-primary btn-large">
+      <button id="submitAuth" class="btn-primary">
         <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
       </button>
-      <p>¿No tienes cuenta? <a href="#" onclick="event.preventDefault(); showAuthModal('register')">Crear una</a></p>
+      <p style="text-align: center; margin-top: 16px;">¿No tienes cuenta? <a onclick="showAuthModal('register')">Crear una</a></p>
     `;
   } else {
     form.innerHTML = `
       <h2>Crear Cuenta</h2>
+      <p>Únete a nuestra comunidad</p>
       <input type="text" id="username" placeholder="Nombre de usuario" required>
       <input type="email" id="email" placeholder="Correo electrónico" required>
       <input type="password" id="password" placeholder="Contraseña (mín. 6)" required>
-      <button id="submitAuth" class="btn-primary btn-large">
+      <button id="submitAuth" class="btn-primary">
         <i class="fas fa-user-plus"></i> Registrarse
       </button>
-      <p>¿Ya tienes cuenta? <a href="#" onclick="event.preventDefault(); showAuthModal('login')">Inicia sesión</a></p>
+      <p style="text-align: center; margin-top: 16px;">¿Ya tienes cuenta? <a onclick="showAuthModal('login')">Inicia sesión</a></p>
     `;
   }
 
@@ -114,32 +114,29 @@ function updateAuthUI() {
   const authSection = document.querySelector('#authSection');
 
   if (token && currentUser) {
-    const avatar = currentUser.profile?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.username)}&background=2563eb&color=fff`;
+    const avatar = currentUser.profile?.avatar || 
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.username)}&background=6366f1&color=fff`;
     
     authSection.innerHTML = `
-      <div class="user-profile">
+      <div class="user-profile" onclick="goToMyProfile()">
         <div class="user-profile-avatar">
           <img src="${avatar}" alt="${currentUser.username}">
         </div>
-        <div style="flex: 1;">
-          <div style="font-weight: 600; color: var(--text-primary); font-size: 14px;">${currentUser.username}</div>
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);">${currentUser.username}</div>
           <span>${currentUser.email}</span>
         </div>
       </div>
-      <button class="btn-secondary btn-sm" onclick="goToMyProfile()">
-        <i class="fas fa-user"></i> Perfil
-      </button>
-      <button class="btn-secondary btn-sm" id="logoutBtn">
+      <button class="btn-secondary" style="width: 100%; margin-top: 8px;" onclick="logout()">
         <i class="fas fa-sign-out-alt"></i> Salir
       </button>
     `;
-    document.getElementById('logoutBtn').addEventListener('click', logout);
   } else {
     authSection.innerHTML = `
-      <button class="btn-primary btn-sm" onclick="showAuthModal('login')">
+      <button class="btn-primary" style="width: 100%; margin-bottom: 8px;" onclick="showAuthModal('login')">
         <i class="fas fa-sign-in-alt"></i> Iniciar
       </button>
-      <button class="btn-secondary btn-sm" onclick="showAuthModal('register')">
+      <button class="btn-secondary" style="width: 100%;" onclick="showAuthModal('register')">
         <i class="fas fa-user-plus"></i> Registro
       </button>
     `;
@@ -149,12 +146,8 @@ function updateAuthUI() {
 function updateAuthorNameInput() {
   if (token && currentUser) {
     authorNameInput.value = currentUser.username;
-    authorNameInput.disabled = true;
-    authorNameInput.style.opacity = '0.6';
   } else {
     authorNameInput.value = '';
-    authorNameInput.disabled = false;
-    authorNameInput.style.opacity = '1';
   }
 }
 
@@ -201,17 +194,12 @@ async function uploadFile(file) {
         });
 
         const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.error || 'Error al subir archivo');
-        }
-
+        if (!response.ok) throw new Error(result.error);
         resolve(result.url);
       } catch (error) {
         reject(error);
       }
     };
-    reader.onerror = () => reject(new Error('Error al leer archivo'));
     reader.readAsDataURL(file);
   });
 }
@@ -228,12 +216,12 @@ async function sendMessage() {
     }
 
     if (!content) {
-      alert('Por favor escribe un mensaje');
+      alert('Escribe un mensaje');
       return;
     }
 
     sendBtn.disabled = true;
-    sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+    sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publicando...';
 
     const images = [];
     const videos = [];
@@ -243,7 +231,7 @@ async function sendMessage() {
         const url = await uploadFile(file);
         images.push(url);
       } catch (error) {
-        console.error('Error subiendo imagen:', error);
+        console.error('Error:', error);
       }
     }
 
@@ -252,7 +240,7 @@ async function sendMessage() {
         const url = await uploadFile(file);
         videos.push(url);
       } catch (error) {
-        console.error('Error subiendo video:', error);
+        console.error('Error:', error);
       }
     }
 
@@ -270,9 +258,7 @@ async function sendMessage() {
       })
     });
 
-    if (!response.ok) {
-      throw new Error('Error al enviar mensaje');
-    }
+    if (!response.ok) throw new Error('Error');
 
     messageContentInput.value = '';
     if (!token) authorNameInput.value = '';
@@ -286,24 +272,20 @@ async function sendMessage() {
     alert('Error: ' + error.message);
   } finally {
     sendBtn.disabled = false;
-    sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Publicar Mensaje';
+    sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Publicar';
   }
 }
 
 async function loadMessages() {
   try {
-    loadingDiv.classList.remove('hidden');
     const response = await fetch(`${API_BASE}/messages`);
-
-    if (!response.ok) throw new Error('Error al cargar mensajes');
+    if (!response.ok) throw new Error('Error');
 
     allMessages = await response.json();
     displayMessages();
+    loadingDiv.classList.add('loading-skeleton');
   } catch (error) {
     console.error('Error:', error);
-    messagesContainer.innerHTML = '<p style="color: var(--danger); text-align: center;">Error al cargar los mensajes</p>';
-  } finally {
-    loadingDiv.classList.add('hidden');
   }
 }
 
@@ -338,7 +320,7 @@ function displayMessages(searchQuery = '') {
   }
 
   if (messagesToDisplay.length === 0) {
-    messagesContainer.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 40px;">No hay mensajes</p>';
+    messagesContainer.innerHTML = '<div style="text-align: center; padding: 60px 20px; color: var(--text-tertiary);"><i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>No hay mensajes</div>';
     return;
   }
 
@@ -354,8 +336,8 @@ function renderMessage(message) {
   const canEdit = token && currentUser && currentUser.id === message.author.userId;
 
   const avatar = message.author.userId 
-    ? (currentUser?.profile?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.author.name)}&background=2563eb&color=fff`)
-    : `https://ui-avatars.com/api/?name=A&background=94a3b8&color=fff`;
+    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(message.author.name)}&background=6366f1&color=fff&size=48`
+    : `https://ui-avatars.com/api/?name=A&background=94a3b8&color=fff&size=48`;
 
   let actionsHTML = `
     <button class="action-btn" onclick="replyMessage('${message._id}')">
@@ -371,7 +353,7 @@ function renderMessage(message) {
       <button class="action-btn" onclick="editMessage('${message._id}', \`${escapeQuotes(message.content)}\`)">
         <i class="fas fa-edit"></i> Editar
       </button>
-      <button class="action-btn btn-danger" onclick="deleteMessage('${message._id}')">
+      <button class="action-btn" style="color: var(--danger);" onclick="deleteMessage('${message._id}')">
         <i class="fas fa-trash"></i> Eliminar
       </button>
     `;
@@ -379,16 +361,16 @@ function renderMessage(message) {
 
   div.innerHTML = `
     <div class="message-header">
-      <div class="message-author-info">
+      <div class="message-user-info">
         <div class="message-avatar" onclick="message.author.userId && goToProfile('${message.author.userId}')">
           <img src="${avatar}" alt="${message.author.name}">
         </div>
-        <div class="message-author-details">
-          <div class="message-author-name" onclick="message.author.userId && goToProfile('${message.author.userId}')">
+        <div class="message-details">
+          <div class="message-author" onclick="message.author.userId && goToProfile('${message.author.userId}')">
             ${escapeHtml(message.author.name)}
           </div>
           <div class="message-meta">
-            ${message.edited ? '<span style="margin-right: 8px;">(editado)</span>' : ''}
+            ${message.edited ? '<span style="margin-right: 8px;">editado</span>' : ''}
             <span>${timeAgo}</span>
           </div>
         </div>
@@ -416,7 +398,7 @@ function renderMedia(message) {
   if (message.images && message.images.length > 0) {
     html += '<div class="message-media">';
     message.images.forEach(img => {
-      html += `<img src="${img}" alt="Imagen" onclick="window.open('${img}')">`;
+      html += `<img src="${img}" onclick="window.open('${img}')">`;
     });
     html += '</div>';
   }
@@ -444,8 +426,7 @@ function escapeQuotes(text) {
 
 function getTimeAgo(date) {
   const seconds = Math.floor((new Date() - date) / 1000);
-  
-  if (seconds < 60) return 'hace unos segundos';
+  if (seconds < 60) return 'ahora';
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `hace ${minutes}m`;
   const hours = Math.floor(minutes / 60);
@@ -466,24 +447,12 @@ async function loadReplies(messageId) {
       const replyDiv = document.createElement('div');
       replyDiv.className = 'reply-item';
 
-      const avatar = reply.author.userId 
-        ? `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.author.name)}&background=2563eb&color=fff`
-        : `https://ui-avatars.com/api/?name=A&background=94a3b8&color=fff`;
+      const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.author.name)}&background=6366f1&color=fff&size=32`;
 
       replyDiv.innerHTML = `
-        <div style="display: flex; gap: 8px;">
-          <img src="${avatar}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
-          <div style="flex: 1;">
-            <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);">
-              ${escapeHtml(reply.author.name)}
-            </div>
-            <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">
-              ${getTimeAgo(new Date(reply.createdAt))}
-            </div>
-            <div style="color: var(--text-primary); font-size: 13px;">
-              ${escapeHtml(reply.content)}
-            </div>
-          </div>
+        <strong>${escapeHtml(reply.author.name)}</strong>
+        <div style="margin-top: 4px; color: var(--text-secondary); font-size: 13px;">
+          ${escapeHtml(reply.content)}
         </div>
       `;
 
@@ -496,7 +465,7 @@ async function loadReplies(messageId) {
 
 function replyMessage(messageId) {
   if (!token) {
-    alert('Debes iniciar sesión para responder');
+    alert('Debes iniciar sesión');
     return;
   }
 
@@ -505,7 +474,7 @@ function replyMessage(messageId) {
   form.className = 'reply-form';
   
   form.innerHTML = `
-    <textarea placeholder="Escribe tu respuesta..." rows="2" class="reply-content" maxlength="5000"></textarea>
+    <textarea placeholder="Responder..." rows="2" class="reply-content" maxlength="500"></textarea>
     <div style="display: flex; gap: 8px;">
       <button class="btn-primary btn-sm submit-reply" data-id="${messageId}">
         <i class="fas fa-send"></i> Enviar
@@ -552,7 +521,7 @@ function replyMessage(messageId) {
 
 async function editMessage(messageId, currentContent) {
   if (!token) {
-    alert('Debes iniciar sesión para editar');
+    alert('Debes iniciar sesión');
     return;
   }
 
@@ -578,14 +547,12 @@ async function editMessage(messageId, currentContent) {
 }
 
 async function deleteMessage(messageId) {
-  if (!confirm('¿Eliminar este mensaje?')) return;
+  if (!confirm('¿Eliminar?')) return;
 
   try {
     const response = await fetch(`${API_BASE}/messages/${messageId}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
 
     if (!response.ok) throw new Error('Error');
@@ -624,8 +591,8 @@ function goToMyProfile() {
   window.location.href = '/profile.html';
 }
 
-// === INICIALIZACIÓN ===
-async function initializeApp() {
+// Initialize
+async function init() {
   if (token) {
     try {
       const response = await fetch('/api/auth/profile', {
@@ -639,9 +606,7 @@ async function initializeApp() {
         localStorage.removeItem('token');
       }
     } catch (error) {
-      console.error('Error cargando perfil:', error);
       token = null;
-      localStorage.removeItem('token');
     }
   }
 
@@ -650,7 +615,5 @@ async function initializeApp() {
   loadMessages();
 }
 
-initializeApp();
-
-// Recargar mensajes cada 10 segundos
-setInterval(loadMessages, 10000);
+init();
+setInterval(loadMessages, 15000);
